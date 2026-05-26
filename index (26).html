@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+
+<!-- ============ PWA META & VERKNUEPFUNGEN ============ -->
+<meta name="description" content="Dein Premium Stoneware Rezept-Grundstock - Rezepte, Umrechner und Einkaufsliste in einer App.">
+<meta name="theme-color" content="#9B5E74">
+<meta name="color-scheme" content="light">
+<meta name="format-detection" content="telephone=no">
+
+<!-- iOS / Apple-spezifisch (iPhone, iPad Home-Screen) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stoneware">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<!-- Manifest & Favicons -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<!-- ============ ENDE PWA SETUP ============ -->
+
+<title>Stoneware App · Grundstock Rezepte</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+:root{--bg:#F7F0F3;--card:#fff;--cream:#FFF8FB;--text:#351E29;--mid:#6B3F54;--soft:#9E7080;--mauve:#9B5E74;--dark:#6B2E44;--light:#C4899E;--xl:#EDD5DE;--border:#E8D5DC;--green:#4A7A5A;--amber:#B87840;--blue:#5A7BB5}
+*{box-sizing:border-box} body{margin:0;background:linear-gradient(160deg,#F7F0F3,#FFF8FB);font-family:Nunito,system-ui,sans-serif;color:var(--text)} button,input,select,textarea{font:inherit} button{cursor:pointer}
+.app{min-height:100vh;padding-bottom:80px} .header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,var(--dark),var(--mauve));color:white;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 0;box-shadow:0 8px 30px rgba(107,46,68,.25)} .head-inner{max-width:980px;margin:auto} .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px} .brand h1{font-family:Cormorant Garamond,serif;margin:0;font-size:24px;line-height:1;font-weight:700} .brand p{margin:2px 0 0;color:rgba(255,255,255,.55);font-size:11px;letter-spacing:1.4px;text-transform:uppercase}
+.tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none} .tabs::-webkit-scrollbar{display:none} .tab{white-space:nowrap;border:0;border-radius:12px 12px 0 0;padding:10px 13px;background:transparent;color:rgba(255,255,255,.7);font-size:13px;font-weight:800} .tab.active{background:var(--bg);color:var(--dark)} .wrap{max-width:980px;margin:auto;padding:18px 14px}
+.hero{border-radius:26px;padding:26px 22px;background:linear-gradient(135deg,var(--dark),var(--mauve) 58%,var(--light));color:white;box-shadow:0 18px 44px rgba(107,46,68,.24);overflow:hidden;position:relative;margin-bottom:16px} .hero:before{content:"";position:absolute;right:-90px;top:-90px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.09)} .kicker{font-size:11px;letter-spacing:2.6px;text-transform:uppercase;color:rgba(255,255,255,.58);font-weight:900;margin:0 0 8px} .hero h2{font-family:Cormorant Garamond,serif;font-size:clamp(30px,8vw,48px);line-height:.98;margin:0 0 12px;font-weight:700;position:relative} .hero p{margin:0;font-size:14px;line-height:1.7;color:rgba(255,255,255,.78);max-width:620px;position:relative}
+.grid{display:grid;gap:14px} .grid.two{grid-template-columns:repeat(2,minmax(0,1fr))} .grid.three{grid-template-columns:repeat(3,minmax(0,1fr))} @media(max-width:740px){.grid.two,.grid.three{grid-template-columns:1fr}.brand h1{font-size:21px}.wrap{padding:14px 12px}.hero{padding:24px 18px}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:17px;box-shadow:0 8px 26px rgba(107,46,68,.08)} .card h3{font-family:Cormorant Garamond,serif;margin:0 0 8px;font-size:24px;line-height:1.05} .card p{margin:0;color:var(--mid);font-size:13.5px;line-height:1.65} .notice{background:#FBF4EB;border:2px solid #DDB87A;border-radius:18px;padding:15px;display:flex;gap:12px;align-items:flex-start;margin-bottom:16px} .notice p{margin:0;color:var(--mid);line-height:1.6;font-size:13.5px}
+.btn{border:0;border-radius:999px;padding:12px 16px;font-weight:900;font-size:13px;background:linear-gradient(135deg,var(--mauve),var(--dark));color:white;box-shadow:0 8px 20px rgba(107,46,68,.18)} .btn.secondary{background:white;color:var(--dark);border:1px solid var(--border);box-shadow:none} .btn.blue{background:linear-gradient(135deg,var(--blue),var(--mauve))} .btn.full{width:100%}
+.searchbar{display:flex;gap:8px;position:sticky;top:calc(98px + env(safe-area-inset-top,0px));z-index:30;background:rgba(247,240,243,.94);backdrop-filter:blur(8px);padding:10px 0;margin-bottom:12px} .searchbar input,.field,input,select,textarea{width:100%;border:1px solid var(--border);border-radius:14px;background:white;color:var(--text);padding:12px 13px;outline:none} .chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none} .chips::-webkit-scrollbar{display:none} .chip{white-space:nowrap;border:0;border-radius:999px;padding:8px 12px;background:var(--xl);color:var(--dark);font-size:12px;font-weight:900} .chip.active{background:var(--dark);color:white}
+.recipe{position:relative;overflow:hidden} .recipe:before{content:"";position:absolute;left:0;top:0;right:0;height:5px;background:linear-gradient(90deg,var(--mauve),var(--light))} .meta{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px} .pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;background:var(--xl);color:var(--dark);padding:4px 9px;font-size:11px;font-weight:900} .recipe h3{font-size:20px;margin-top:6px} .product-icon{height:120px;border-radius:28px;background:linear-gradient(135deg,var(--xl),white);display:flex;align-items:center;justify-content:center;font-size:54px;border:1px solid var(--border)} .fav{position:absolute;right:14px;top:13px;border:0;background:white;color:var(--mauve);width:36px;height:36px;border-radius:50%;box-shadow:0 4px 14px rgba(107,46,68,.12);font-size:18px} .fav.on{background:var(--mauve);color:white}
+.modal{position:fixed;inset:0;background:rgba(58,31,42,.72);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:12px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain} .modal-box{position:relative;background:var(--cream);border-radius:26px;width:100%;max-width:820px;margin:0 auto;box-shadow:0 28px 70px rgba(58,31,42,.32)} .modal-head{background:linear-gradient(135deg,var(--dark),var(--mauve));color:white;padding:22px;border-radius:26px 26px 0 0;position:sticky;top:0;z-index:2} .close{position:absolute;right:14px;top:14px;border:0;background:rgba(255,255,255,.28);color:white;border-radius:50%;width:42px;height:42px;font-size:24px;line-height:1;z-index:10;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center} .modal-body{padding:18px} .list{margin:0;padding:0;list-style:none} .list li{padding:8px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;color:var(--mid);font-size:13.5px;line-height:1.55} .num{background:var(--mauve);color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:900}
+.tool-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px} @media(max-width:560px){.tool-row{grid-template-columns:1fr}.searchbar{top:calc(92px + env(safe-area-inset-top,0px))}.modal{padding:0;align-items:flex-start}.modal-box{border-radius:0;min-height:100%;margin:0}.modal-head{border-radius:0;padding-top:calc(22px + env(safe-area-inset-top,0px))}.close{top:calc(14px + env(safe-area-inset-top,0px))}.modal-body{padding:14px}}
+.export-card{position:absolute;left:-9999px;top:0;width:1080px;height:1350px;background:linear-gradient(160deg,#FFF8FB,#F7EDF2 55%,#EED8E2);padding:78px;font-family:Nunito,sans-serif;color:var(--text)} .export-card.story{height:1920px;padding:110px 86px} .export-title{font-family:Cormorant Garamond,serif;font-size:76px;line-height:.98;font-weight:700;color:var(--text);margin:40px 0 22px} .export-card.story .export-title{font-size:92px} .small{font-size:12px;color:var(--soft);line-height:1.55} .footer-note{text-align:center;margin:26px 0;color:var(--soft);font-size:12px}
+
+.product-real-img{
+ width:100%;
+ height:170px;
+ object-fit:cover;
+ border-radius:26px;
+ display:block;
+ background:#f7f2f4;
+ box-shadow:0 10px 30px rgba(0,0,0,.12);
+}
+.product-wrap{
+ position:relative;
+}
+.product-badge{
+ position:absolute;
+ left:12px;
+ bottom:12px;
+ background:rgba(255,255,255,.85);
+ backdrop-filter:blur(10px);
+ padding:6px 12px;
+ border-radius:999px;
+ font-weight:700;
+ color:#6B2E44;
+}
+
+/* === Tools-Tab: Hinweise & Shop-Buttons === */
+.product-tip{background:#FBF4EB;border:1px solid #DDB87A;border-radius:14px;padding:10px 12px;display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-size:12.5px;color:var(--mid);line-height:1.55}
+.product-tip-icon{font-size:18px;line-height:1;flex-shrink:0}
+.btn-shop{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;padding:11px 16px;font-weight:900;font-size:12.5px;background:linear-gradient(135deg,var(--mauve),var(--dark));color:white;text-decoration:none;box-shadow:0 8px 20px rgba(107,46,68,.18);margin-top:12px;width:100%;box-sizing:border-box;cursor:pointer}
+.btn-shop:active{transform:scale(.98)}
+.conversion-info{background:linear-gradient(135deg,var(--xl),#FFF8FB);border:1px solid var(--border);border-radius:14px;padding:11px 14px;margin-top:12px;font-size:13px;color:var(--dark);font-weight:700;text-align:center}
+.product-mini{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+.product-mini img{width:54px;height:54px;object-fit:cover;border-radius:14px;flex-shrink:0;box-shadow:0 4px 12px rgba(107,46,68,.12)}
+.product-mini h3{margin:0;font-size:20px;line-height:1.1}
+
+/* === Timer === */
+.timer-display{font-family:Cormorant Garamond,Playfair Display,serif;font-weight:700;font-size:84px;text-align:center;letter-spacing:-3px;background:linear-gradient(135deg,var(--dark),var(--mauve));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--dark);line-height:1;margin:18px 0 6px;font-variant-numeric:tabular-nums}
+.timer-display.finished{animation:timerFlash 0.7s ease-in-out 3}
+@keyframes timerFlash{0%,100%{opacity:1}50%{opacity:0.3}}
+.timer-status{text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--mid);margin:0 0 14px}
+.timer-status.running{color:var(--mauve)}
+.timer-presets{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:10px}
+.timer-presets .chip{flex:0 0 auto;font-size:13px;padding:8px 14px}
+.timer-controls{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-top:12px}
+.timer-controls .btn{width:100%;padding:13px 10px;font-size:13.5px}
+
+/* === Import CTA (Screenshot -> Rezept) === */
+.import-cta{background:linear-gradient(135deg,#FFF8FB,#F7E8EF);border:2px dashed var(--mauve);border-radius:20px;padding:18px 20px;display:flex;gap:14px;align-items:center;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;margin:12px 0 16px}
+.import-cta:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(107,46,68,.15)}
+.import-cta-icon{font-size:34px;line-height:1;flex-shrink:0}
+.import-cta-text{flex:1;line-height:1.4}
+.import-cta-text strong{color:var(--dark);font-size:15px;display:block;margin-bottom:2px}
+.import-cta-text span{color:var(--mid);font-size:12.5px}
+.import-cta-arrow{font-size:22px;color:var(--mauve);flex-shrink:0}
+
+/* === Recipe Action Buttons (Timer + Einkaufsliste im Rezept) === */
+.recipe-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+.recipe-action-btn{display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:14px 16px;font-weight:800;font-size:13.5px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;text-align:center;line-height:1.2}
+.recipe-action-btn:active{transform:scale(.97)}
+.recipe-action-timer{background:linear-gradient(135deg,var(--mauve),var(--dark));color:white;box-shadow:0 8px 18px rgba(107,46,68,.18)}
+.recipe-action-shop{background:#FBF4EB;color:var(--dark);border:1.5px solid #DDB87A}
+
+/* === Inline Step-Timer Chips === */
+.step-timer{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,var(--mauve),var(--dark));color:white;border:0;border-radius:999px;padding:3px 11px;font-size:12.5px;font-weight:800;cursor:pointer;vertical-align:baseline;margin:0 2px;white-space:nowrap;box-shadow:0 4px 10px rgba(107,46,68,.18);transition:transform .15s ease,box-shadow .15s ease;line-height:1.4}
+.step-timer:active{transform:scale(.93)}
+.step-timer:hover{box-shadow:0 6px 14px rgba(107,46,68,.28)}
+
+/* === Navigation Improvements === */
+.brand h1{cursor:pointer;transition:opacity .2s ease,transform .2s ease;display:inline-block}
+.brand h1:hover{opacity:.75;transform:translateX(-2px)}
+.tab.active{background:var(--bg);color:var(--dark);font-weight:900;box-shadow:inset 0 -3px 0 var(--dark)}
+.tab:hover:not(.active){background:rgba(255,255,255,.12);color:white}
+.back-bar{display:inline-flex;align-items:center;gap:8px;background:white;border:1.5px solid var(--border);border-radius:999px;padding:9px 18px;font-size:13px;font-weight:800;color:var(--dark);cursor:pointer;margin:18px 0 4px;transition:all .15s ease;text-decoration:none;user-select:none}
+.back-bar:hover{background:var(--xl);border-color:var(--mauve);transform:translateX(-3px);box-shadow:0 6px 14px rgba(107,46,68,.18)}
+.back-bar-arrow{font-size:18px;line-height:1}
+
+/* === Toast === */
+.smk-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(40px);background:linear-gradient(135deg,var(--dark),var(--mauve));color:white;padding:14px 22px;border-radius:999px;font-weight:700;font-size:14px;box-shadow:0 18px 40px rgba(107,46,68,.28);opacity:0;transition:opacity .25s ease,transform .25s ease;z-index:9999;max-width:90vw;text-align:center;line-height:1.35}
+.smk-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* === Empty State (Einkaufsliste) === */
+.empty-state{text-align:center;padding:30px 20px;color:var(--mid)}
+.empty-state-icon{font-size:48px;margin-bottom:12px;opacity:.6}
+.empty-state h4{font-family:Cormorant Garamond,serif;font-size:24px;margin:0 0 6px;color:var(--dark);font-weight:600}
+.empty-state p{margin:0;font-size:13.5px;line-height:1.5}
+
+</style>
+</head>
+<body>
+<div class="app">
+<header class="header"><div class="head-inner"><div class="brand"><div><h1 onclick="showTab('home')" title="Zur Startseite">Stoneware App</h1></div><button class="btn secondary" onclick="showTab('finder')">Produktfinder</button></div><nav class="tabs" id="tabs"></nav></div></header>
+<main id="content"></main></div><div id="modalRoot"></div>
+<script>
+const products = [{"id": "home", "label": "Start", "emoji": "🏠"}, {"id": "all", "label": "Alle Rezepte", "emoji": "🍳"}, {"id": "ofenmeister", "label": "Ofenmeister", "emoji": "🏺", "desc": "Brot, One Pot, Schmorgerichte, Aufläufe und große Familienportionen."}, {"id": "lilly", "label": "Lilly", "emoji": "🫙", "desc": "Kleine Brote, Beilagen, Kuchen, Mini-Aufläufe und kleine Portionen."}, {"id": "ofenhexe", "label": "Ofenhexe", "emoji": "🥘", "desc": "Aufläufe, Ofengerichte, Familienessen und Feierabendbleche."}, {"id": "ofenzauberer", "label": "James", "emoji": "🍕", "desc": "Pizza, Flammkuchen, Focaccia, Blechgerichte und Ofengemüse."}, {"id": "zauberstein", "label": "Zauberstein", "emoji": "🪨", "desc": "Pizza, Brot, Brötchen, Fladenbrot und knusprige Snacks."}, {"id": "white-lady", "label": "White Lady", "emoji": "🍪", "desc": "Kuchen, Brownies, Zimtschnecken, Cookies und süße Blechideen."}, {"id": "grillpfanne", "label": "Grillpfanne", "emoji": "🔥", "desc": "Gusseiserne Bratpfanne vom Grill: Gyros, Nachos, Fisch, Pancakes und herzhafte Pfannengerichte."}, {"id": "grillstein", "label": "Grillstein", "emoji": "🫓", "desc": "Rechteckiger Grillstein: Pizza, Focaccia, Grillgemüse, Fisch und gegrillte Früchte."}, {"id": "shopping", "label": "Einkaufsliste", "emoji": "🧾"}, {"id": "tools", "label": "Tools", "emoji": "🧮"}, {"id": "finder", "label": "Finder", "emoji": "🛒"}];
+const recipes = [{"id": 101, "product": "ofenmeister", "title": "Sauerteig-Mischbrot im Ofenmeister", "category": "Brot", "time": "55–60 Min", "temp": "250°C → 220°C", "portions": "1 Brot", "ingredients": ["350 g Weizenmehl 550", "150 g Roggenmehl 1150", "350 g Wasser", "100 g aktiver Sauerteigstarter", "10 g Salz", "optional 1 TL Honig"], "steps": ["Mehl, Wasser und Starter grob mischen und 30 Minuten ruhen lassen.", "Salz einkneten und den Teig während der Stockgare 3–4x dehnen und falten.", "Bis zur passenden Volumenzunahme reifen lassen.", "Formen, Stückgare machen und einschneiden.", "Im Ofenmeister mit Deckel backen, am Ende ohne Deckel bräunen."]}, {"id": 102, "product": "ofenmeister", "title": "Anfänger-Bauernbrot", "category": "Brot", "time": "60 Min", "temp": "230°C", "portions": "1 Brot", "ingredients": ["350 g Weizenmehl 550", "150 g Roggenmehl 1150", "350 g Wasser", "10 g frische Hefe", "10 g Salz", "1 TL Honig"], "steps": ["Hefe und Honig im Wasser lösen.", "Mehl und Salz zugeben und zu einem glatten Teig kneten.", "60–90 Minuten ruhen lassen.", "Teig falten, rund oder länglich formen und in den Ofenmeister geben.", "Mit Deckel backen und anschließend auf einem Gitter auskühlen lassen."]}, {"id": 103, "product": "ofenmeister", "title": "Käse-Jalapeño-Brot", "category": "Brot", "time": "55–60 Min", "temp": "230°C", "portions": "1 Brot", "ingredients": ["500 g Weizenmehl 550", "340 g Wasser", "100 g Sauerteigstarter oder 10 g Hefe", "10 g Salz", "120 g geriebener Käse", "Jalapeños nach Geschmack"], "steps": ["Grundteig herstellen und ruhen lassen.", "Käse und Jalapeños beim letzten Falten einarbeiten.", "Teig formen und in den Ofenmeister geben.", "Mit Deckel backen, am Ende ohne Deckel bräunen."]}, {"id": 104, "product": "ofenmeister", "title": "Mediterranes Hähnchen mit Kartoffeln", "category": "Geflügel", "time": "75 Min", "temp": "220°C", "portions": "4", "ingredients": ["800 g Hähnchenteile", "700 g Kartoffeln in Spalten", "1 Paprika", "1 rote Zwiebel", "2 Knoblauchzehen", "3 EL Olivenöl", "1 TL Paprika edelsüß", "1 TL Oregano", "100 ml Gemüsebrühe", "Salz und Pfeffer"], "steps": ["Kartoffeln, Gemüse, Öl und Gewürze im Ofenmeister mischen.", "Hähnchen würzen und oben auflegen.", "Mit Deckel 60 Minuten garen.", "Deckel abnehmen und 10–15 Minuten bräunen."]}, {"id": 105, "product": "ofenmeister", "title": "Putengeschnetzeltes in Champignon-Rahmsauce", "category": "Geflügel", "time": "50–60 Min", "temp": "220°C", "portions": "4", "ingredients": ["650 g Putengeschnetzeltes", "250 g Champignons", "1 Zwiebel", "250 ml Sahne", "250 ml Gemüsebrühe", "1 TL Senf", "1 TL Paprika edelsüß", "Salz und Pfeffer", "1 EL Speisestärke optional"], "steps": ["Zwiebel und Champignons in den gefetteten Ofenmeister geben.", "Pute würzen und darauf verteilen.", "Sahne, Brühe, Senf und Gewürze verrühren und darüber geben.", "Mit Deckel garen, zum Andicken optional Stärke einrühren und kurz ohne Deckel nachziehen lassen."]}, {"id": 106, "product": "ofenmeister", "title": "Gyros-Reis-Topf", "category": "One Pot", "time": "65 Min", "temp": "220°C", "portions": "4", "ingredients": ["600 g Gyrosfleisch", "250 g Reis", "500 ml Gemüsebrühe", "200 ml Sahne oder Kochsahne", "1 Paprika", "1 Zwiebel", "150 g Mais optional", "100 g Feta optional"], "steps": ["Reis, Gemüse und Mais in den Ofenmeister geben.", "Brühe und Sahne darüber gießen.", "Gyrosfleisch oben verteilen.", "Mit Deckel garen, vorsichtig umrühren und optional Feta darüber geben."]}, {"id": 107, "product": "ofenmeister", "title": "Cremige Tortellini One Pot", "category": "One Pot", "time": "40–45 Min", "temp": "210°C", "portions": "4", "ingredients": ["500 g frische Tortellini", "300 ml Sahne", "250 ml Gemüsebrühe", "150 g Frischkäse", "200 g Kirschtomaten", "150 g Spinat", "80 g Parmesan", "Salz, Pfeffer, Muskat"], "steps": ["Tortellini, Spinat und Tomaten in den Ofenmeister geben.", "Sahne, Brühe, Frischkäse und Gewürze verrühren.", "Sauce darüber geben und mit Deckel garen.", "Parmesan darüber streuen und kurz ohne Deckel überbacken."]}, {"id": 108, "product": "ofenmeister", "title": "Hackbällchen Toscana", "category": "Fleisch", "time": "50 Min", "temp": "220°C", "portions": "4", "ingredients": ["600 g Hackfleisch", "1 Ei", "3 EL Semmelbrösel", "1 TL Senf", "500 ml passierte Tomaten", "150 ml Sahne", "1 TL italienische Kräuter", "125 g Mozzarella", "Salz, Pfeffer, Paprika"], "steps": ["Hackfleisch mit Ei, Semmelbröseln, Senf und Gewürzen verkneten.", "Bällchen formen und in den Ofenmeister legen.", "Tomaten, Sahne und Kräuter verrühren und darüber geben.", "Mit Deckel garen, Mozzarella darauf geben und ohne Deckel bräunen."]}, {"id": 109, "product": "ofenmeister", "title": "Lasagne Familienportion", "category": "Auflauf", "time": "60 Min", "temp": "200°C", "portions": "4–6", "ingredients": ["9–12 Lasagneplatten", "700 g Bolognese", "400 ml Béchamel oder Sahnesauce", "150 g geriebener Käse", "optional Gemüsewürfel"], "steps": ["Etwas Sauce auf den Boden geben.", "Lasagneplatten, Bolognese und Béchamel abwechselnd schichten.", "Mit Sauce und Käse abschließen.", "Mit Deckel backen, am Ende ohne Deckel goldbraun überbacken."]}, {"id": 110, "product": "ofenmeister", "title": "Kartoffelgratin mit Schinken", "category": "Auflauf", "time": "70 Min", "temp": "200°C", "portions": "4", "ingredients": ["900 g Kartoffeln in dünnen Scheiben", "200 g Kochschinken", "300 ml Sahne", "200 ml Milch", "1 Knoblauchzehe", "120 g Käse", "Salz, Pfeffer, Muskat"], "steps": ["Kartoffeln und Schinken in den Ofenmeister schichten.", "Sahne, Milch, Knoblauch und Gewürze verrühren.", "Sauce darüber geben und mit Deckel garen.", "Käse darüber streuen und ohne Deckel bräunen."]}, {"id": 111, "product": "ofenmeister", "title": "Chili sin Carne", "category": "Eintopf", "time": "55 Min", "temp": "220°C", "portions": "4", "ingredients": ["1 Dose Kidneybohnen", "1 Dose schwarze Bohnen", "1 Dose Mais", "700 ml passierte Tomaten", "1 Paprika", "1 Zwiebel", "1 TL Kreuzkümmel", "1 TL Paprika geräuchert", "Chili nach Geschmack"], "steps": ["Alle Zutaten im Ofenmeister gut verrühren.", "Mit Deckel garen.", "Abschmecken und optional ohne Deckel etwas einkochen lassen.", "Mit Reis, Brot oder Tortilla-Chips servieren."]}, {"id": 112, "product": "ofenmeister", "title": "Kürbis-Kokos-Curry", "category": "Eintopf", "time": "50–55 Min", "temp": "220°C", "portions": "4", "ingredients": ["700 g Hokkaido", "1 Dose Kokosmilch", "300 ml Gemüsebrühe", "1 Dose Kichererbsen", "1 Zwiebel", "1–2 EL Currypaste", "1 TL Kurkuma", "Salz und Pfeffer", "optional Spinat"], "steps": ["Kürbis, Kichererbsen und Zwiebel in den Ofenmeister geben.", "Kokosmilch, Brühe und Gewürze verrühren.", "Mit Deckel garen.", "Optional Spinat unterheben und kurz nachziehen lassen."]}, {"id": 201, "product": "lilly", "title": "Mini-Bauernbrot aus der Lilly", "category": "Brot", "time": "50–55 Min", "temp": "230°C", "portions": "1 kleines Brot", "ingredients": ["250 g Weizenmehl 550", "100 g Roggenmehl 1150", "230 g Wasser", "8 g frische Hefe", "1 TL Honig", "8 g Salz"], "steps": ["Hefe und Honig im Wasser lösen.", "Mehl und Salz zugeben und kneten.", "60–90 Minuten ruhen lassen.", "Formen, in die Lilly legen und mit Deckel backen."]}, {"id": 202, "product": "lilly", "title": "Ayran-Dinkelbrot", "category": "Brot", "time": "60 Min", "temp": "230°C", "portions": "1 kleines Brot", "ingredients": ["400 g Ayran", "20 g Hefe", "1 TL Honig", "300 g Dinkelmehl 630", "150 g Roggenmehl 1150", "70 g Haferflocken", "1,5 TL Salz"], "steps": ["Ayran, Hefe und Honig verrühren.", "Restliche Zutaten zugeben und kneten.", "1 Stunde ruhen lassen.", "Falten, in die Lilly legen und backen."]}, {"id": 203, "product": "lilly", "title": "Bananenbrot", "category": "Kuchen", "time": "45–50 Min", "temp": "180°C", "portions": "1 kleiner Kuchen", "ingredients": ["2 reife Bananen", "2 Eier", "80 g Zucker", "80 ml Öl", "150 g Mehl", "1 TL Backpulver", "1 Prise Salz", "optional Schokostücke"], "steps": ["Bananen zerdrücken.", "Eier, Zucker und Öl unterrühren.", "Trockene Zutaten kurz einrühren.", "In die gefettete Lilly geben und backen."]}, {"id": 204, "product": "lilly", "title": "Mini-Nudelauflauf", "category": "Auflauf", "time": "30–35 Min", "temp": "200°C", "portions": "2", "ingredients": ["250 g gekochte Nudeln", "200 ml Sahnesauce", "100 g Käse", "Gemüse nach Wahl", "Salz und Pfeffer"], "steps": ["Alles in der Lilly vermengen.", "Käse darüber streuen.", "Mit Deckel backen und am Ende kurz bräunen."]}, {"id": 205, "product": "lilly", "title": "Rosmarin-Kartoffeln", "category": "Beilage", "time": "45–50 Min", "temp": "220°C", "portions": "2–3", "ingredients": ["600 g kleine Kartoffeln", "2 EL Olivenöl", "1 TL Rosmarin", "1 Knoblauchzehe", "Salz und Pfeffer", "optional Parmesan"], "steps": ["Kartoffeln halbieren und würzen.", "In die Lilly geben.", "Mit Deckel garen.", "Ohne Deckel bräunen und optional Parmesan darüber geben."]}, {"id": 206, "product": "lilly", "title": "Milchreis aus der Lilly", "category": "Süßes", "time": "55–60 Min", "temp": "180°C", "portions": "2–3", "ingredients": ["150 g Milchreis", "600 ml Milch", "30 g Zucker", "1 Pck. Vanillezucker", "1 Prise Salz", "Zimt zum Servieren"], "steps": ["Alle Zutaten in die Lilly geben und gut verrühren.", "Mit Deckel garen.", "Umrühren und kurz nachziehen lassen.", "Mit Zimt oder Beeren servieren."]}, {"id": 207, "product": "lilly", "title": "Bratäpfel", "category": "Süßes", "time": "35 Min", "temp": "190°C", "portions": "2–3", "ingredients": ["3 Äpfel", "3 TL Mandelmus oder Butter", "3 TL Nüsse", "2 TL Honig", "1/2 TL Zimt", "optional Rosinen"], "steps": ["Äpfel entkernen und in die Lilly setzen.", "Füllung mischen und einfüllen.", "Mit Deckel backen, am Ende kurz ohne Deckel fertig garen."]}, {"id": 208, "product": "lilly", "title": "Mini-Gnocchi-Tomate-Mozzarella", "category": "One Pot", "time": "30–35 Min", "temp": "210°C", "portions": "2", "ingredients": ["400 g Gnocchi", "300 ml passierte Tomaten", "100 ml Sahne", "1 Kugel Mozzarella", "Tomaten", "Basilikum", "Salz und Pfeffer"], "steps": ["Gnocchi und Sauce in die Lilly geben.", "Mozzarella darüber zupfen.", "Mit Deckel garen und am Ende ohne Deckel überbacken."]}, {"id": 301, "product": "ofenhexe", "title": "Feierabendblech mit Hähnchenschenkeln", "category": "Ofengericht", "time": "45–50 Min", "temp": "220°C", "portions": "4", "ingredients": ["6 Hähnchenschenkel", "800 g Kartoffeln", "Karotten", "Zwiebeln", "Knoblauch", "3 EL Olivenöl", "italienische Gewürze", "Salz und Pfeffer"], "steps": ["Gemüse schneiden und würzen.", "Hähnchen würzen und auflegen.", "In der Ofenhexe backen, bis das Hähnchen gar und knusprig ist."]}, {"id": 302, "product": "ofenhexe", "title": "Gemüse-Hack-Auflauf", "category": "Auflauf", "time": "45 Min", "temp": "210°C", "portions": "4", "ingredients": ["400 g Hackfleisch", "Kartoffeln oder Nudeln", "Paprika", "Karotten", "250 ml Sahne", "200 ml Brühe", "Käse", "Gewürze"], "steps": ["Alle Zutaten in der Ofenhexe verteilen.", "Sauce darüber geben.", "Mit Käse bestreuen und backen."]}, {"id": 303, "product": "ofenhexe", "title": "Maultaschen-Auflauf", "category": "Auflauf", "time": "35–40 Min", "temp": "200°C", "portions": "4", "ingredients": ["800 g Maultaschen", "250 ml Sahne", "200 ml Gemüsebrühe", "1 Zwiebel", "Spinat oder Gemüse", "120 g Käse", "Muskat, Salz, Pfeffer"], "steps": ["Maultaschen schneiden und in die Ofenhexe geben.", "Sauce und Gemüse darüber verteilen.", "Mit Käse backen, bis alles goldbraun ist."]}, {"id": 304, "product": "ofenhexe", "title": "XXL Schnitzelauflauf", "category": "Fleisch", "time": "45 Min", "temp": "210°C", "portions": "4", "ingredients": ["4 Schnitzel", "Kartoffelspalten", "200 ml Sahne", "200 ml Brühe", "Paprika", "Käse", "Gewürze"], "steps": ["Kartoffeln unten verteilen.", "Schnitzel würzen und auflegen.", "Sauce darüber geben und backen.", "Käse am Ende optional darüber streuen."]}, {"id": 305, "product": "ofenhexe", "title": "Brokkoli-Hähnchen-Auflauf", "category": "Auflauf", "time": "45 Min", "temp": "200°C", "portions": "4", "ingredients": ["600 g Hähnchenbrust", "500 g Brokkoli", "250 ml Sahne", "200 ml Brühe", "100 g Frischkäse", "Käse", "Salz, Pfeffer, Muskat"], "steps": ["Hähnchen und Brokkoli in der Ofenhexe verteilen.", "Sauce verrühren und darüber geben.", "Mit Käse backen, bis alles gar ist."]}, {"id": 401, "product": "ofenzauberer", "title": "Pizza Margherita", "category": "Pizza", "time": "12–18 Min", "temp": "230°C", "portions": "1 Blech", "ingredients": ["1 Pizzateig", "Tomatensauce", "Mozzarella", "Basilikum", "Olivenöl", "Salz"], "steps": ["Teig ausrollen und auf den James legen.", "Mit Sauce und Mozzarella belegen.", "Knusprig backen und mit Basilikum servieren."]}, {"id": 402, "product": "ofenzauberer", "title": "Flammkuchen Elsässer Art", "category": "Pizza", "time": "12–15 Min", "temp": "230°C", "portions": "1 Blech", "ingredients": ["Flammkuchenteig", "Crème fraîche", "Zwiebeln", "Speckwürfel", "Pfeffer"], "steps": ["Teig dünn ausrollen.", "Mit Crème fraîche bestreichen und belegen.", "Knusprig backen."]}, {"id": 403, "product": "ofenzauberer", "title": "Pizzabrötchen Party Style", "category": "Snack", "time": "18–22 Min", "temp": "220°C", "portions": "12 Stück", "ingredients": ["Brötchenteig", "Tomatensauce", "Salami oder Gemüse", "Mozzarella", "italienische Kräuter"], "steps": ["Teig portionieren und füllen.", "Auf dem James verteilen.", "Backen, bis die Brötchen goldbraun sind."]}, {"id": 404, "product": "ofenzauberer", "title": "Ofengemüse mit Feta", "category": "Vegetarisch", "time": "30–35 Min", "temp": "220°C", "portions": "4", "ingredients": ["Kartoffeln", "Zucchini", "Paprika", "Karotten", "Olivenöl", "Feta", "Kräuter", "Salz und Pfeffer"], "steps": ["Gemüse schneiden und würzen.", "Auf dem James verteilen.", "Backen und Feta am Ende darüber geben."]}, {"id": 405, "product": "ofenzauberer", "title": "Focaccia vom James", "category": "Brot", "time": "25–30 Min", "temp": "220°C", "portions": "1 Blech", "ingredients": ["500 g Mehl", "380 g Wasser", "10 g Hefe", "10 g Salz", "Olivenöl", "Rosmarin", "grobes Salz"], "steps": ["Teig herstellen und gut gehen lassen.", "Auf dem James verteilen und mit Öl beträufeln.", "Mit Fingern Mulden drücken, Rosmarin und Salz darüber geben.", "Goldbraun backen."]}, {"id": 501, "product": "zauberstein", "title": "Knusprige Sonntagsbrötchen", "category": "Brot", "time": "20–25 Min", "temp": "230°C", "portions": "8 Stück", "ingredients": ["500 g Mehl", "300 g Wasser", "10 g Hefe", "10 g Salz", "1 TL Honig"], "steps": ["Teig kneten und gehen lassen.", "Brötchen formen und einschneiden.", "Auf dem Zauberstein knusprig backen."]}, {"id": 502, "product": "zauberstein", "title": "Knusper-Fladenbrot", "category": "Brot", "time": "18–22 Min", "temp": "230°C", "portions": "1 Fladen", "ingredients": ["400 g Mehl", "250 g Wasser", "8 g Hefe", "8 g Salz", "Olivenöl", "Sesam"], "steps": ["Teig kneten und gehen lassen.", "Flach drücken, mit Öl bestreichen und Sesam bestreuen.", "Knusprig backen."]}, {"id": 503, "product": "zauberstein", "title": "Pizza Bianca", "category": "Pizza", "time": "12–16 Min", "temp": "230°C", "portions": "1 Pizza", "ingredients": ["Pizzateig", "Ricotta oder Schmand", "Mozzarella", "Rosmarin", "Olivenöl", "Salz"], "steps": ["Teig ausziehen.", "Mit Ricotta, Mozzarella und Rosmarin belegen.", "Auf dem Zauberstein knusprig backen."]}, {"id": 504, "product": "zauberstein", "title": "Schnelle Knoblauch-Stangen", "category": "Snack", "time": "14–18 Min", "temp": "220°C", "portions": "8 Stück", "ingredients": ["Pizzateig", "Knoblauchbutter", "Parmesan", "Petersilie"], "steps": ["Teig in Streifen schneiden.", "Mit Knoblauchbutter bestreichen.", "Auf dem Zauberstein backen und mit Parmesan bestreuen."]}, {"id": 601, "product": "white-lady", "title": "Zimtschnecken vom Stein", "category": "Süßes", "time": "25–30 Min", "temp": "180°C", "portions": "12 Stück", "ingredients": ["Hefeteig", "80 g Butter", "80 g Zucker", "2 TL Zimt", "Frischkäseglasur optional"], "steps": ["Teig ausrollen und mit Butter, Zucker und Zimt füllen.", "Aufrollen, schneiden und auf die White Lady legen.", "Goldbraun backen und optional glasieren."]}, {"id": 602, "product": "white-lady", "title": "Saftige Brownies", "category": "Kuchen", "time": "25–30 Min", "temp": "180°C", "portions": "1 Blech", "ingredients": ["200 g Schokolade", "150 g Butter", "150 g Zucker", "3 Eier", "100 g Mehl", "30 g Kakao"], "steps": ["Schokolade und Butter schmelzen.", "Zucker und Eier einrühren.", "Mehl und Kakao kurz unterheben.", "Auf der White Lady backen, nicht zu trocken werden lassen."]}, {"id": 603, "product": "white-lady", "title": "Apfel-Streusel-Kuchen", "category": "Kuchen", "time": "35–40 Min", "temp": "180°C", "portions": "1 Blech", "ingredients": ["Rührteig", "4 Äpfel", "Zimt", "Streusel aus Butter, Zucker und Mehl"], "steps": ["Teig auf der White Lady verteilen.", "Äpfel darauf geben.", "Streusel darüber streuen und backen."]}, {"id": 604, "product": "white-lady", "title": "Cookie Bars", "category": "Süßes", "time": "22–28 Min", "temp": "180°C", "portions": "1 Blech", "ingredients": ["Cookie-Teig", "Schokostücke", "optional Nüsse", "Prise Salz"], "steps": ["Teig auf der White Lady verteilen.", "Backen, bis die Ränder goldbraun sind.", "Abkühlen lassen und in Stücke schneiden."]}, {"id": 406, "product": "ofenzauberer", "title": "Discard-Rhabarberkuchen vom James", "category": "Kuchen", "time": "35–40 Min", "temp": "180°C", "portions": "1 James", "ingredients": ["1000 g Rhabarber", "370 g Zucker", "5 Eier", "150 g Butter", "150 g Milch", "370 g Mehl", "2 Pck. Backpulver", "4 Eiweiß", "200 g Zucker für das Baiser"], "steps": ["Rhabarber klein schneiden und auf dem James verteilen.", "Butter, Zucker und Eier cremig verrühren.", "Milch, Mehl und Backpulver unterrühren.", "Teig über den Rhabarber streichen.", "Bei 200°C ca. 30 Minuten backen.", "Eiweiß steif schlagen und Zucker einrieseln lassen.", "Baiser auf dem Kuchen verteilen und Wellen formen.", "Bei 160°C weitere 15 Minuten backen."]}, {"id": 900, "product": "ofenzauberer", "title": "Selterskuchen vom James", "category": "Kuchen", "time": "25–30 Min", "temp": "180°C", "portions": "1 James", "ingredients": ["300 g Mehl", "250 g Zucker", "4 Eier", "250 ml Öl", "250 ml Zitronenlimonade", "1 Pck. Backpulver"], "steps": ["Alles zu einem glatten Teig verrühren.", "Auf dem James verteilen.", "Goldgelb backen und optional glasieren."]}, {"id": 901, "product": "ofenhexe", "title": "Mac & Cheese Familienauflauf", "category": "Auflauf", "time": "35–40 Min", "temp": "200°C", "portions": "4–6", "ingredients": ["500 g Makkaroni", "400 ml Milch", "200 ml Sahne", "250 g Käse", "1 TL Senf", "Salz & Pfeffer"], "steps": ["Nudeln vorkochen.", "Sauce verrühren und mit den Nudeln mischen.", "In der Ofenhexe überbacken."]}, {"id": 902, "product": "ofenmeister", "title": "Pulled Pork aus dem Ofenmeister", "category": "Fleisch", "time": "5 Std", "temp": "140°C", "portions": "6", "ingredients": ["1,5 kg Schweinenacken", "BBQ Rub", "200 ml Apfelsaft", "BBQ Sauce"], "steps": ["Fleisch würzen und in den Ofenmeister legen.", "Mit Apfelsaft angießen.", "Langsam garen bis es zerfällt.", "Zerpflücken und mit BBQ Sauce mischen."]}, {"id": 903, "product": "lilly", "title": "Curryreis aus der Lilly", "category": "Beilage", "time": "35 Min", "temp": "200°C", "portions": "2–3", "ingredients": ["200 g Reis", "400 ml Brühe", "100 ml Kokosmilch", "1 TL Curry", "Gemüse nach Wahl"], "steps": ["Alles in die Lilly geben.", "Mit Deckel garen.", "Vor dem Servieren umrühren."]}, {"id": 904, "product": "ofenzauberer", "title": "Pizzabrötchen vom James", "category": "Snack", "time": "20 Min", "temp": "220°C", "portions": "12 Stück", "ingredients": ["Brötchenteig", "Tomatensauce", "Käse", "Salami oder Gemüse"], "steps": ["Teig füllen und formen.", "Auf dem James verteilen.", "Goldbraun backen."]}, {"id": 1001, "product": "grillpfanne", "title": "Gyrospfanne vom Grill", "category": "Fleisch", "time": "ca. 20 Min", "temp": "350°C → indirekt", "portions": "2–3", "ingredients": ["400 g Gyros vom Metzger", "1 Zwiebel", "1 Paprika", "200 g Feta"], "steps": ["Den Grill auf 350°C vorheizen. Die Gusseiserne Bratpfanne flach daraufstellen und 5 Minuten vorheizen.", "Etwas Öl auf der Pfanne verteilen. Das Fleisch dazugeben und einige Minuten gut anbraten. Zwiebel und Paprika schneiden, dazugeben und alles weiter anbraten, bis das Fleisch gar ist.", "Den Grill auf indirekte Hitze stellen. Den Feta über das Gyros bröseln, den Grilldeckel schließen und den Käse 5–10 Minuten schmelzen lassen. Mit Fladenbrot und frischem Salat servieren."]}, {"id": 1002, "product": "grillpfanne", "title": "Foccacia vom Grill", "category": "Brot", "time": "20–22 Min (+ Gehzeit)", "temp": "200°C indirekt", "portions": "1 Foccacia", "ingredients": ["500 g Mehl Type 550", "360 ml Wasser (lauwarm)", "30 ml Olivenöl", "10 g Salz", "1/2 Würfel Hefe", "1 TL Zucker", "Olivenöl", "Oliven", "Frischer Rosmarin", "Grobes Meersalz"], "steps": ["Wasser mit Zucker und Hefe vermischen. Mehl, Salz und Olivenöl hinzugeben und gründlich verkneten, bis ein geschmeidiger Hefeteig entsteht. Den Teig ca. 60 Minuten gehen lassen.", "Die Pfanne flach einfetten, den Teig darauf verteilen und mit Olivenöl bestreichen. Weitere 30 Minuten gehen lassen. In der Zwischenzeit den Grill auf 200°C indirekte Hitze vorheizen.", "Mit den Fingern die typischen Dellen in den Teig drücken. Oliven und Rosmarin verteilen, etwas grobes Meersalz darübergeben. Auf dem Grill 20–22 Minuten bei geschlossenem Deckel goldbraun backen."]}, {"id": 1003, "product": "grillpfanne", "title": "Überbackene Nachos mit Rinderhack", "category": "Snack", "time": "ca. 20 Min", "temp": "240°C", "portions": "3–4", "ingredients": ["200 g Gouda", "200 g Cheddar", "1 Paprika", "1 rote Zwiebel", "2–3 EL hoch erhitzbares Öl", "500 g Hackfleisch", "1 Päckchen Taco-Würzmischung", "1 Dose Mais", "8–10 Jalapeño-Scheiben (aus dem Glas)", "Petersilie zum Garnieren"], "steps": ["Die Pfanne flach auf den Grill stellen und den Grill auf 240°C vorheizen.", "Den Käse reiben. Paprika und rote Zwiebel zerkleinern.", "Öl in die Pfanne geben und das Hackfleisch mit den Gewürzen krümelig anbraten. Die Zwiebeln dazugeben und mitbraten.", "Paprika und Mais auf das Hackfleisch geben, Hitze etwas reduzieren. Nach ca. 5 Minuten etwas Käse darübergeben, die Nachos dazugeben und mit dem restlichen Käse bestreuen.", "Den Deckel schließen und alles ca. 5 Minuten überbacken.", "Zum Schluss mit Jalapeños und Petersilie garnieren."]}, {"id": 1004, "product": "grillpfanne", "title": "Loaded Nachos vom Grill", "category": "Snack", "time": "ca. 30 Min (+ 1 Std marinieren)", "temp": "350°C → indirekt", "portions": "3–4", "ingredients": ["400 g Hähnchen- oder Putenbrustfilet", "Salz, Pfeffer, Rauchpaprika, Knoblauchpulver", "2–3 EL Öl", "1 Paprika", "1 rote Zwiebel", "1 Knoblauchzehe", "1 kleine Dose Mais", "200 g Nachos", "200 g geriebener Käse", "Etwas Crème fraîche und Frühlingszwiebeln zum Servieren"], "steps": ["Das Fleisch in mundgerechte Stücke schneiden.", "Mit den Gewürzen und 1 EL Öl mischen und ca. 1 Stunde im Kühlschrank ziehen lassen.", "Paprika und Zwiebel in Streifen schneiden, Knoblauch pressen, Mais dazugeben.", "Den Grill auf 350°C vorheizen, die Pfanne 5 Minuten vorheizen. Etwas Öl hineingeben und das Fleisch kross anbraten. Das Gemüse zugeben, mitbraten und alles vermengen. Anschließend in eine Schüssel geben.", "Den Grill auf indirekte Hitze stellen. Eine Schicht Nachos in die Pfanne geben, die Hälfte des Belags und des Käses darauf verteilen, eine weitere Schicht Nachos und den Rest wiederholen. Einige Minuten überbacken. Mit Crème fraîche und Frühlingszwiebeln servieren."]}, {"id": 1005, "product": "grillpfanne", "title": "Bratkartoffeln vom Grill", "category": "Beilage", "time": "ca. 20 Min", "temp": "Grill heiß", "portions": "2–3", "ingredients": ["400 g Kartoffeln", "etwas Rapsöl", "1 TL Salz", "2 TL Paprikapulver, geräuchert"], "steps": ["Den Grill mit der Pfanne flach vorheizen.", "Die Kartoffeln in ca. 2 x 2 cm große Stücke schneiden und mit Rapsöl, Salz und Paprikapulver vermischen.", "Die Kartoffeln auf die heiße Pfanne geben und regelmäßig wenden. Nach ca. 20 Minuten sind sie fertig.", "Dazu passt ein Dip mit frischen Kräutern und Quark."]}, {"id": 1006, "product": "grillpfanne", "title": "Lammfilet mit gegrillten Auberginenscheiben", "category": "Fleisch", "time": "ca. 10 Min (+ 1 Std marinieren)", "temp": "Grill mittel-heiß", "portions": "4", "ingredients": ["4 Lammfilets", "Für die Marinade: Schale einer Zitrone", "1 EL Majoran", "1 TL Kümmel", "1/2 Bund Petersilie", "8 EL Olivenöl", "Salz & Pfeffer", "1 Aubergine", "Saft einer Zitrone", "Olivenöl", "Salz & etwas Majoran"], "steps": ["Lammfilets abspülen und trockentupfen. Mit abgeriebener Zitronenschale einreiben und mit Majoran, Kümmel, Salz und Pfeffer würzen.", "Petersilie fein hacken, mit Olivenöl verrühren, die Filets darin einlegen und zugedeckt mindestens 1 Stunde im Kühlschrank durchziehen lassen.", "Auberginen in 1 cm dicke Scheiben schneiden, mit Salz einreiben und ca. 20 Minuten Wasser ziehen lassen, dann trockentupfen.", "Zitronensaft auspressen, die Auberginen damit einreiben, mit Olivenöl bestreichen und mit Majoran würzen.", "Die Pfanne flach auf dem Grill vorheizen und etwas Öl verteilen.", "Lammfilets aus der Marinade heben, abtropfen lassen, in die Pfanne geben und die Auberginen drumherum verteilen.", "Fleisch und Auberginen von jeder Seite 4–5 Minuten grillen und mit frischen Kräutern garnieren."]}, {"id": 1007, "product": "grillpfanne", "title": "Dorade vom Grill", "category": "Fisch", "time": "20–30 Min", "temp": "mittlere Hitze", "portions": "2", "ingredients": ["2 Doraden (fertig geschuppt)", "2 Knoblauchzehen", "2 Zweige Rosmarin", "2 Zweige Thymian", "1 Zitrone", "Olivenöl", "Salz & Pfeffer", "Butterschmalz"], "steps": ["Doraden waschen, trockentupfen und die Haut quer einschneiden.", "Knoblauch würfeln, mit Olivenöl, Salz und Pfeffer verrühren und die Fische innen damit einstreichen.", "Zitrone in Scheiben schneiden und den Bauchraum mit Zitrone, Rosmarin und Thymian füllen.", "Die Pfanne flach bei mittlerer Hitze vorheizen, etwas Butterschmalz hineingeben und die Fische darauf platzieren.", "Bei mittlerer Hitze je nach Dicke ca. 10–15 Minuten von jeder Seite grillen."]}, {"id": 1008, "product": "grillpfanne", "title": "Pancakes vom Grill", "category": "Süßes", "time": "ca. 20 Min", "temp": "230°C", "portions": "ca. 10 Stück", "ingredients": ["250 ml Milch", "2 Eier", "3 EL Öl", "1 EL Vanilleextrakt", "220 g Dinkelmehl Type 630", "1 EL Puderzucker", "1 Päckchen Vanillezucker", "1 Prise Salz", "etwas Öl zum Ausbacken"], "steps": ["Zuerst alle flüssigen, dann die trockenen Zutaten in den Teigmischer geben.", "Verschließen und alles gut vermengen.", "Die Pfanne flach im Grill auf ca. 230°C vorheizen.", "Die Pfanne großzügig einfetten.", "Die Pancakes portionsweise in die Pfanne geben.", "Sobald sie goldbraun sind, wenden und von der anderen Seite ebenfalls goldbraun backen.", "Fertige Pancakes warmhalten, bis alle gebacken sind."]}, {"id": 1101, "product": "grillstein", "title": "Pestoschnecken", "category": "Snack", "time": "18–20 Min (+ Gehzeit)", "temp": "200°C indirekt", "portions": "ca. 10 Stück", "ingredients": ["330 g Mehl Type 405", "1/2 Würfel frische Hefe", "200 ml Wasser", "10 g Salz", "1 EL Zucker", "3–4 EL Olivenöl", "100 g Pesto (rot oder grün)", "Käse nach Belieben (z. B. Gouda)"], "steps": ["Hefe und Zucker im lauwarmen Wasser auflösen. Restliche Zutaten zugeben und zu einem geschmeidigen Hefeteig verarbeiten. Abgedeckt ca. 1 Stunde gehen lassen.", "Den Grill auf ca. 200°C vorheizen. Den Teig flach ausrollen, Pesto darauf verteilen und Käse darüber reiben. Von der langen Seite aufrollen und in ca. 2 cm breite Schnecken teilen. Den Grillstein dünn einfetten und die Schnecken daraufsetzen.", "Den Grill auf indirekte Hitze stellen und den Grillstein daraufstellen. Die Schnecken ca. 18–20 Minuten backen, bis sie schön gebräunt sind."]}, {"id": 1102, "product": "grillstein", "title": "Pesto-Grillgemüse-Bruschetta", "category": "Vegetarisch", "time": "ca. 25 Min", "temp": "350°C → indirekt", "portions": "4", "ingredients": ["150 g grüner Spargel", "150 g Kirschtomaten", "1 Paprika", "1 rote Zwiebel", "1 Knoblauchzehe", "100 g Pesto", "Salz, Pfeffer, Paprikapulver", "1 Handvoll Basilikum", "1 Baguette zum Servieren", "Geröstete Pinienkerne (optional)"], "steps": ["Das Gemüse in mundgerechte Stücke schneiden und mit den restlichen Zutaten (außer Pinienkerne, Basilikum und Baguette) vermengen und ziehen lassen.", "Den Grill auf 350°C vorheizen. Den Grillstein ca. 15 Minuten mit vorheizen, dann auf indirekte Hitze stellen. Das Gemüse darauf garen, bis es bissfest ist.", "Das Baguette in Scheiben schneiden und kurz anrösten, nach Wunsch mit Knoblauch einreiben. Basilikum in Streifen schneiden, Pinienkerne kurz anrösten.", "Das Grillgemüse auf dem Baguette verteilen, Basilikum und Pinienkerne darübergeben und servieren."]}, {"id": 1103, "product": "grillstein", "title": "Grill-Kartoffeln", "category": "Beilage", "time": "ca. 15 Min", "temp": "Grill heiß", "portions": "2–3", "ingredients": ["ca. 300–400 g Drillinge, vorgekocht", "Rapsöl", "Kartoffelgewürz"], "steps": ["Kartoffeln halbieren und mit Rapsöl und Gewürz vermischen.", "Den Grillstein auf dem Grill gut vorheizen.", "Die Kartoffeln mit der Schnittfläche nach unten auflegen und einige Minuten anbraten, dann wenden und von allen Seiten goldbraun grillen.", "Die knusprigen Grill-Kartoffeln passen zu vielen Grillgerichten."]}, {"id": 1104, "product": "grillstein", "title": "Gemischtes Grillgemüse", "category": "Vegetarisch", "time": "ca. 15 Min (+ 30 Min ziehen)", "temp": "Grill heiß", "portions": "4", "ingredients": ["Gemüse nach Wahl (z. B. Paprika, Zucchini, Aubergine, Champignons, Porree, Sellerie)", "2 EL Olivenöl", "1 Knoblauchzehe", "2 TL italienische Kräuter", "1 EL Zitronensaft", "Salz & Pfeffer"], "steps": ["Gemüse waschen, ggf. entkernen und in Scheiben oder Streifen schneiden.", "Mit Gewürzen, Olivenöl, gepresstem Knoblauch und Zitronensaft vermischen und 30 Minuten ziehen lassen.", "Den Grillstein auf dem Grill gut vorheizen.", "Das Gemüse ohne zusätzliches Fett auf dem Stein verteilen und von beiden Seiten einige Minuten grillen."]}, {"id": 1105, "product": "grillstein", "title": "Rösti-Ecken mit Grillgemüse", "category": "Beilage", "time": "ca. 15 Min", "temp": "Grill heiß", "portions": "3–4", "ingredients": ["1 Packung Rösti-Ecken (TK)", "Gemüse nach Wahl (z. B. Paprika, Zucchini, Aubergine, Zwiebel)", "2 EL Olivenöl", "1 Knoblauchzehe", "1 TL italienische Kräuter", "1 EL Zitronensaft", "Salz & Pfeffer", "Etwas Öl für den Grillstein"], "steps": ["Gemüse waschen, ggf. entkernen und in Scheiben oder Streifen schneiden.", "Mit Gewürzen, Olivenöl, gepresstem Knoblauch und Zitronensaft vermischen und 30 Minuten ziehen lassen.", "Rösti-Ecken etwas antauen lassen.", "Den Grillstein gut vorheizen und etwas Öl hineingeben.", "Rösti-Ecken und Gemüse auf dem Stein verteilen und von beiden Seiten einige Minuten grillen."]}, {"id": 1106, "product": "grillstein", "title": "Berner Würstchen mit Feta-Kartoffeln", "category": "Fleisch", "time": "ca. 25 Min", "temp": "Grill heiß", "portions": "3–4", "ingredients": ["1 Packung Berner Würstchen", "300 g Kartoffeln", "3 EL Rapsöl", "2 TL Paprikapulver", "1 Zwiebel", "1 Feta", "etwas Kokosöl oder Butterschmalz"], "steps": ["Den Grill mit dem Grillstein zusammen vorheizen.", "Kartoffeln in Spalten schneiden und mit Rapsöl und Paprikapulver marinieren.", "Zwiebeln in Scheiben schneiden und separat aufbewahren.", "Den Feta in Würfel schneiden und separat aufbewahren.", "Den Grillstein mit etwas Kokosfett oder Butterschmalz fetten und die Kartoffeln darauflegen.", "Die Kartoffeln gut wenden. Nach ca. 15 Minuten die Zwiebeln dazugeben und die Berner Würstchen am Rand verteilen.", "Nach 5 Minuten den Feta darauf verteilen.", "Fertig, wenn die Kartoffeln leicht gebräunt und knusprig sind. Heiß genießen."]}, {"id": 1107, "product": "grillstein", "title": "Lachs mit grünem Spargel vom Grill", "category": "Fisch", "time": "ca. 20 Min", "temp": "Grill heiß", "portions": "2", "ingredients": ["1 Lachsfilet mit Haut", "500 g grüner Spargel", "etwas Zitronenpfeffer"], "steps": ["Den Grill mit dem Grillstein zusammen vorheizen.", "Den grünen Spargel im unteren Drittel festhalten und den Stiel abknicken; er bricht dort, wo das holzige Ende aufhört.", "Den Lachs auf der Oberseite mit etwas Zitronenpfeffer einreiben.", "Den Lachs mit der Hautseite auf den heißen Stein legen und den Spargel links und rechts verteilen. Wenn die Haut sich abzulösen beginnt, den Lachs drehen.", "Nach ca. 20 Minuten sind Lachs und Spargel fertig gegrillt."]}, {"id": 1108, "product": "grillstein", "title": "Panuozzo – italienisches Pizza-Sandwich", "category": "Pizza", "time": "ca. 20 Min (+ 1 Std Gehzeit)", "temp": "Grill heiß", "portions": "3", "ingredients": ["Für den Teig: 220 ml Wasser", "1 TL Zucker", "20 g Hefe, frisch", "400 g Weizenmehl Type 550", "30 ml Olivenöl", "1 TL Salz", "Für die Füllung: Rucola", "Einige Tomaten", "Grünes Pesto", "Einige Scheiben Prosciutto", "3 Burrata Kugeln", "Olivenöl", "Balsamico-Creme", "Salz & Pfeffer", "Geröstete Pinienkerne (optional)"], "steps": ["Alle Zutaten für den Teig zu einem Hefeteig verkneten und abgedeckt 1 Stunde gehen lassen.", "Teig leicht bemehlen, in 3 gleich große Teile schneiden, rundwirken und mit einem Tuch abdecken.", "Den Grillstein auf dem Grill gut vorheizen.", "Die Teiglinge zu runden Pizzen ausrollen, mit 1 EL Olivenöl bestreichen und zusammenklappen.", "Auf dem Grillstein von beiden Seiten ohne Fett ca. 10 Minuten goldbraun backen.", "Rucola und Tomaten waschen, Tomaten in Scheiben schneiden.", "Den Pizzaboden aufklappen, eine Seite mit Pesto bestreichen und mit Rucola, Tomaten und Prosciutto belegen. Burrata darübergeben und vorsichtig verteilen.", "Mit Olivenöl, Balsamico-Creme, Salz und Pfeffer beträufeln und mit Pinienkernen bestreuen.", "Die Pizza zusammenklappen und genießen."]}, {"id": 1109, "product": "grillstein", "title": "Pizza vom Grillstein", "category": "Pizza", "time": "10–15 Min (+ 60 Min Gehzeit)", "temp": "250°C", "portions": "1 Pizza", "ingredients": ["Für den Teig: 1/4 Würfel Hefe", "Prise Zucker", "150 ml lauwarmes Wasser", "215 g Mehl Type 405", "1/2 TL Salz", "2 EL Olivenöl", "Hartweizengrieß zum Ausstreuen", "Für die Füllung: 200 g stückige Tomaten (Dose)", "2 TL italienische Kräuter", "Salz / Pfeffer / Zucker", "1 Kugel Mozzarella", "Belag nach Wunsch (z. B. Salami, Schinken, Zwiebeln, Grillgemüse)"], "steps": ["Die Hefe mit einer Prise Zucker im lauwarmen Wasser auflösen.", "Die restlichen Zutaten zugeben und zu einem Teig verkneten.", "Den Teig abgedeckt mind. 60 Minuten an einem warmen Ort gehen lassen.", "Am Ende der Gehzeit den Grill mit dem Grillstein auf 250°C vorheizen.", "Den Teig auf mit Hartweizengrieß ausgestreuter Unterlage ausrollen.", "Stückige Tomaten mit Kräutern, Salz, Pfeffer und Zucker verrühren und auf dem Teig verteilen.", "Den Mozzarella reiben und auf dem Teig verteilen.", "Mit Belag nach Wunsch belegen und auf den heißen Grillstein schieben.", "Die Pizza ist fertig, wenn der Rand leicht braun wird. Evtl. die Hitze reduzieren."]}, {"id": 1110, "product": "grillstein", "title": "Gegrillte Früchte mit Joghurt-Minzsoße", "category": "Süßes", "time": "ca. 15 Min", "temp": "350°C → indirekt", "portions": "4", "ingredients": ["Obst nach Wahl (z. B. Pfirsiche, Ananas, Äpfel, Birnen, Bananen)", "Für die Joghurt-Minzsoße: 500 g griechischer Joghurt", "50 g Zucker", "Saft einer Limette", "1/2 Bund Minze, klein gehackt"], "steps": ["Den Grill auf 350°C vorheizen. Den Grillstein ca. 15 Minuten vorheizen, dann auf indirekte Hitze stellen.", "Obst in mundgerechte Stücke schneiden und auf den Stein legen. Grillen, bis das Obst schön weich ist.", "In der Zwischenzeit alle Zutaten für die Joghurt-Minzsoße vermengen und zum Grillobst servieren."]}];
+let state = {tab: localStorage.getItem("stone-tab") || "home", query:"", cat:"Alle", favs: JSON.parse(localStorage.getItem("stone-favs") || "[]"), custom: JSON.parse(localStorage.getItem("stone-custom") || "[]")};
+function allRecipes(){return [...recipes,...state.custom]} function productName(id){return products.find(p=>p.id===id)?.label||id} function productEmoji(id){return products.find(p=>p.id===id)?.emoji||"🍳"} function cats(list){return ["Alle",...Array.from(new Set(list.map(r=>r.category))).sort()]} function save(){localStorage.setItem("stone-favs",JSON.stringify(state.favs));localStorage.setItem("stone-custom",JSON.stringify(state.custom));localStorage.setItem("stone-tab",state.tab)} function showTab(id){state.tab=id;state.cat="Alle";save();render();renderShopping();window.scrollTo(0,0)}
+function shoppingHTML(){return `<div class="wrap"><section class="hero"><p class="kicker">Einkaufsliste</p><h2>🧾 Deine Einkaufsliste</h2><p>Füge Zutaten hinzu und hake sie beim Einkaufen ab.</p></section><div class="card"><div class="tool-row"><input id="shopInput" placeholder="Zutat hinzufügen"><button class="btn" onclick="addShopping()">Hinzufügen</button></div><div id="shoppingList"></div></div></div>`}
+let shoppingItems = JSON.parse(localStorage.getItem("shopping-items") || "[]");
+function renderShopping(){const el=document.getElementById("shoppingList"); if(!el)return; if(!shoppingItems.length){el.innerHTML=`<div class="empty-state"><div class="empty-state-icon">🛒</div><h4>Noch leer</h4><p>Tippe oben eine Zutat ein und klick "Hinzufügen" – oder öffne ein Rezept und nutze "🧾 Zutaten zur Einkaufsliste".</p></div>`;return} el.innerHTML=shoppingItems.map((x,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #E8D5DC"><input type="checkbox" ${x.done?"checked":""} onchange="toggleShopping(${i})"><span style="flex:1;${x.done?"text-decoration:line-through;opacity:.5":""}">${x.text}</span><button onclick="deleteShopping(${i})" style="border:0;background:none;font-size:18px">🗑️</button></div>`).join("")}
+function addShopping(){const inp=document.getElementById("shopInput"); const val=inp.value.trim(); if(!val)return; shoppingItems.push({text:val,done:false}); localStorage.setItem("shopping-items",JSON.stringify(shoppingItems)); inp.value=""; renderShopping()}
+function toggleShopping(i){shoppingItems[i].done=!shoppingItems[i].done; localStorage.setItem("shopping-items",JSON.stringify(shoppingItems)); renderShopping()}
+function deleteShopping(i){shoppingItems.splice(i,1); localStorage.setItem("shopping-items",JSON.stringify(shoppingItems)); renderShopping()}
+
+
+
+function calcStonewareRecipe(){
+ const txt = document.getElementById("recipeCalc")?.value?.trim();
+ const fromId = document.getElementById("convertFrom")?.value;
+ const toId   = document.getElementById("convertTo")?.value;
+
+ if(!txt){
+   alert("Bitte zuerst ein Rezept oder die Zutaten eintippen.");
+   return;
+ }
+
+ const sizeFrom = productSizes[fromId] || 1;
+ const sizeTo   = productSizes[toId]   || 1;
+ const factor   = sizeTo / sizeFrom;
+
+ const fromLabel = products.find(p=>p.id===fromId)?.label || fromId;
+ const toLabel   = products.find(p=>p.id===toId)?.label   || toId;
+
+ const lines = txt.split("\n").filter(Boolean);
+
+ const out = lines.map(line=>{
+   return line.replace(/(\d+[,.]?\d*)\s*(g|kg|ml|l|EL|TL|Stueck|Stück|Dose|Dosen|Pck\.?|Becher)?/gi,(m,num,unit="",offset,str)=>{
+     const val = parseFloat(num.replace(",","."));
+     if(!Number.isFinite(val)) return m;
+     const before = String(str).slice(0,offset).toLowerCase();
+     if(!unit && /(mehl|dinkel|weizen|roggen|emmer|einkorn|vollkorn|type|typ)\s*$/.test(before)) return m;
+     const u = unit.toLowerCase();
+     let scaled = val * factor;
+     scaled = (u==="kg" || u==="l") ? Math.round(scaled*100)/100 : Math.round(scaled*10)/10;
+     return `${String(scaled).replace(".",",")}${unit?" "+unit:(m.length>num.length?" ":"")}`;
+   });
+ });
+
+ const factorPretty = Math.round(factor*100)/100;
+ const factorTxt = factorPretty === 1
+   ? "Mengen bleiben gleich (etwa selbe Groesse)"
+   : `Faktor: ${String(factorPretty).replace(".",",")}x`;
+
+ document.getElementById("conversionFactor").innerHTML =
+   `<div class="conversion-info">${fromLabel} → ${toLabel} · ${factorTxt}</div>`;
+
+ document.getElementById("recipeOut").innerHTML =
+   `<div style="background:#FFF8FB;border:1px solid #E8D5DC;border-radius:16px;padding:14px">
+     <strong>Umgerechnetes Rezept</strong>
+     ${out.map(x=>`<div style="padding:8px 0;border-bottom:1px solid #f0e4ea">${x}</div>`).join("")}
+     <button class="btn full" style="margin-top:12px" onclick='addConvertedToShopping(window.lastConvertedItems.join("|"))'>Zur Einkaufsliste hinzufuegen</button>
+   </div>`;
+
+ window.lastConvertedItems = out;
+}
+
+function addConvertedToShopping(text){
+const items=text.split("|");
+items.forEach(x=>shoppingItems.push({text:x,done:false}));
+localStorage.setItem("shopping-items",JSON.stringify(shoppingItems));
+alert("Zur Einkaufsliste hinzugefügt ✓");
+}
+
+function renderTabs(){document.getElementById("tabs").innerHTML=products.map(p=>`<button class="tab ${state.tab===p.id?'active':''}" onclick="showTab('${p.id}')">${p.emoji} ${p.label}</button>`).join("")}
+function render(){renderTabs();const c=document.getElementById("content"); if(state.tab==="home") c.innerHTML=homeHTML(); else if(state.tab==="tools") c.innerHTML=toolsHTML(); else if(state.tab==="finder") c.innerHTML=finderHTML(); else if(state.tab==="shopping") c.innerHTML=shoppingHTML(); else c.innerHTML=recipesHTML(state.tab)}
+const productImages = {
+ "lilly":"assets/images/lilly.jpg",
+ "ofenmeister":"assets/images/ofenmeister.jpg",
+ "ofenhexe":"assets/images/ofenhexe.jpg",
+ "ofenzauberer":"assets/images/james.jpg",
+ "zauberstein":"assets/images/zauberstein.jpg",
+ "white-lady":"assets/images/white-lady.jpg",
+};
+
+// ============================================================
+// STONEWARE GROESSEN-FAKTOREN (relativ zueinander)
+// Basis: 1.0 = grosse Familienportion (Ofenmeister, Ofenhexe, James)
+// Beim Umrechner: factor = size(ZIEL) / size(START)
+// Du kannst diese Werte anpassen, wenn du andere Erfahrungswerte hast.
+// ============================================================
+const productSizes = {
+ "ofenmeister":  1.00,  // ~4 L Brottopf, 4 Personen
+ "ofenhexe":     1.00,  // ~4,7 L Auflaufform, 4 Personen
+ "ofenzauberer": 1.00,  // grosses Backblech (James)
+ "zauberstein":  0.85,  // etwas kleinere Flaeche
+ "white-lady":   0.85,  // etwas kleinere Flaeche
+ "lilly":        0.50,  // kleiner Brottopf, 2 Personen
+};
+
+// ============================================================
+// BERATER-SHOP-LINKS - Felicitas Reitmeier (Pampered Chef)
+// Direktlinks zu den jeweiligen Produktseiten im PWS-Shop.
+// ============================================================
+const SHOP_URLS = {
+ "ofenmeister":  "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/Deep%20Covered%20Baker-2023",
+ "lilly":        "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/Mini%20Deep%20Covered%20Baker-2023",
+ "ofenhexe":     "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/Rectangular%20Baker",
+ "ofenzauberer": "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/Stone%20Bar%20Pan",
+ "zauberstein":  "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/Zauberstein%20plus",
+ "white-lady":   "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/White%20Round%20Stone",
+};
+
+// ============================================================
+// SPEZIELLE PRODUKT-HINWEISE (z.B. Servierzauberer-Tipps)
+// ============================================================
+const productNotes = {
+ "ofenhexe":    "Im Grundset ist der Servierzauberer enthalten - perfekt als Deckel beim Garen oder zum Servieren am Tisch.",
+ "zauberstein": "Der Servierzauberer kann passend als Deckel dazugekauft werden - so wird der Zauberstein zum kompakten Brottopf.",
+};
+
+function renderProductImage(id,label){
+ const src = productImages[id];
+ if(src){
+   return `<div class="product-wrap">
+      <img class="product-real-img" src="${src}" alt="${label}">
+      <div class="product-badge">${label}</div>
+   </div>`;
+ }
+ return `<div style="height:170px;border-radius:26px;background:linear-gradient(135deg,#F5E6EC,#D7B4C1);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#6B2E44">${label}</div>`;
+}
+
+function homeHTML(){return `<div class="wrap"><section class="hero"><p class="kicker">Premium Stoneware Guide</p><h2>Dein Rezept-Grundstock ist drin.</h2><p>Über 60 eigene Stoneware-Rezepte nach Produkt sortiert – mit Favoriten, Suche, Umrechnung, Produktfinder, Screenshot-Import und Instagram-Export.</p></section><div class="notice"><div style="font-size:26px">⚠️</div><p><strong>Wichtig:</strong> Stoneware gemäß Produktangaben verwenden. Heiße Stoneware nie auf nasse oder eiskalte Flächen stellen und Temperaturschocks vermeiden.</p></div><div class="import-cta" onclick="openImport()"><div class="import-cta-icon">📸</div><div class="import-cta-text"><strong>Screenshot zu Rezept</strong><span>Foto von einem Rezept hochladen – Text wird automatisch erkannt und gespeichert.</span></div><div class="import-cta-arrow">→</div></div><div class="grid three">${products.filter(p=>!["home","all","tools","finder","shopping"].includes(p.id)).map(p=>`<div class="card" onclick="showTab('${p.id}')">${renderProductImage(p.id,p.label)}<h3 style="margin-top:12px">${p.label}</h3><p>${p.desc}</p><button class="btn full" style="margin-top:14px">Rezepte öffnen</button></div>`).join("")}</div></div>`}
+function recipesHTML(tab){const list=tab==="all"?allRecipes():allRecipes().filter(r=>r.product===tab); const filtered=list.filter(r=>{const q=state.query.toLowerCase();return (!q||[r.title,r.category,r.product,...r.ingredients].join(" ").toLowerCase().includes(q))&&(state.cat==="Alle"||r.category===state.cat)}); const p=products.find(x=>x.id===tab)||{label:"Alle Rezepte",emoji:"🍳",desc:"Alle Rezepte"}; return `<div class="wrap"><section class="hero"><p class="kicker">${tab==="all"?"Alle Stoneware Rezepte":"Produkt-Reiter"}</p><h2>${p.emoji} ${p.label}</h2><p>${p.desc||"Durchsuche alle Rezepte, speichere Favoriten und exportiere Rezeptkarten."}</p></section><div class="searchbar"><input value="${escapeHtml(state.query)}" oninput="state.query=this.value;render()" placeholder="🔍 Rezept suchen…"/><button class="btn blue" onclick="openImport()">📸 Import</button></div><div class="chips">${cats(list).map(cat=>`<button class="chip ${state.cat===cat?'active':''}" onclick="state.cat='${cat}';render()">${cat}</button>`).join("")}</div><div class="grid three">${filtered.map(recipeCard).join("")||`<div class="card"><h3>Nichts gefunden</h3><p>Versuche einen anderen Suchbegriff.</p></div>`}</div><p class="footer-note">${filtered.length} Rezept${filtered.length!==1?"e":""}</p></div>`}
+function recipeCard(r){const on=state.favs.includes(r.id);return `<div class="card recipe"><button class="fav ${on?'on':''}" onclick="toggleFav(${JSON.stringify(r.id)})">${on?'♥':'♡'}</button><div class="meta"><span class="pill">${productEmoji(r.product)} ${productName(r.product)}</span><span class="pill">${r.category}</span><span class="pill">⏱ ${r.time}</span></div><h3>${escapeHtml(r.title)}</h3><p>${r.ingredients.slice(0,3).join(" · ")}${r.ingredients.length>3?" …":""}</p><button class="btn full" onclick="openRecipe(${JSON.stringify(r.id)})">Rezept öffnen</button></div>`}
+function openRecipe(id){const r=allRecipes().find(x=>String(x.id)===String(id)); if(!r)return; lockScroll(); const canToLilly=r.product!=="lilly" && r.product!=="grillpfanne" && r.product!=="grillstein"; const canToBig=r.product==="lilly"; document.getElementById("modalRoot").innerHTML=`<div class="modal" onclick="closeModal()"><div class="modal-box" onclick="event.stopPropagation()"><div class="modal-head"><button class="close" onclick="closeModal()">×</button><p class="kicker">${productName(r.product)} · ${r.category}</p><h2 style="font-family:Cormorant Garamond,serif;margin:0 0 8px;font-size:32px;line-height:1.05">${escapeHtml(r.title)}</h2><p style="margin:0;color:rgba(255,255,255,.75)">🌡 ${r.temp} · ⏱ ${r.time} · 👥 ${r.portions}</p></div><div class="modal-body"><div class="recipe-actions" style="grid-template-columns:1fr"><button class="recipe-action-btn recipe-action-shop" onclick="addRecipeToShopping(${JSON.stringify(r.id)})">🧾 Zutaten zur Einkaufsliste</button></div><div class="grid two"><div class="card"><h3>Zutaten</h3><ul class="list">${r.ingredients.map(x=>`<li><span>◆</span><span>${escapeHtml(x)}</span></li>`).join("")}</ul></div><div class="card"><h3>Zubereitung</h3><ul class="list">${r.steps.map((x,i)=>`<li><span class="num">${i+1}</span><span>${enhanceStepWithTimer(x, r.title)}</span></li>`).join("")}</ul></div></div><div class="card" style="margin-top:14px"><h3>🔄 Rezept umrechnen</h3><p>Direkt passend für die andere Größe skalieren.</p><div class="grid two" style="margin-top:12px">${canToLilly?`<button class="btn" onclick="showConverted(${JSON.stringify(r.id)},0.5,'Für Lilly · halbe Menge')">Für Lilly</button>`:""}${canToBig?`<button class="btn" onclick="showConverted(${JSON.stringify(r.id)},2,'Für Ofenmeister · doppelte Menge')">Für Ofenmeister</button>`:""}<button class="btn secondary" onclick="customFactor(${JSON.stringify(r.id)})">Eigener Faktor</button></div><div id="convertedArea"></div></div><div class="card" style="margin-top:14px"><h3>📲 Instagram</h3><p>Erstellt eine einfache Rezeptkarte als PNG.</p><div class="grid two" style="margin-top:12px"><button class="btn blue" onclick="downloadIG(${JSON.stringify(r.id)},'feed')">4:5 Feed</button><button class="btn blue" onclick="downloadIG(${JSON.stringify(r.id)},'story')">9:16 Story</button></div><button class="btn secondary full" onclick="copyCaption(${JSON.stringify(r.id)})">Caption kopieren</button><p id="igStatus" class="small" style="margin-top:8px"></p></div>${state.custom.some(c=>String(c.id)===String(r.id))?`<button class="btn secondary full" style="margin-top:14px;color:#a23;border:1.5px solid #e8b5c0;background:#fdf0f3" onclick="deleteCustomRecipe(${JSON.stringify(r.id)})">🗑️ Dieses importierte Rezept löschen</button>`:""}</div></div></div><div id="exportMount"></div>`}
+function showConverted(id,factor,label){const r=allRecipes().find(x=>String(x.id)===String(id)); const rows=r.ingredients.map(x=>scaleIngredient(x,factor)); document.getElementById("convertedArea").innerHTML=`<div style="margin-top:14px;background:#FFF8FB;border:1px solid var(--border);border-radius:16px;padding:13px"><strong>${label}</strong><ul class="list" style="margin-top:8px">${rows.map(x=>`<li><span>◆</span><span>${escapeHtml(x)}</span></li>`).join("")}</ul><p class="small" style="margin-top:8px">Temperatur bleibt meist gleich. Kleinere Mengen nach ca. 2/3 der Zeit prüfen.</p></div>`}
+function customFactor(id){const f=prompt("Faktor eingeben, z.B. 0.5 oder 2:","0.5"); const n=parseFloat(String(f).replace(",",".")); if(Number.isFinite(n))showConverted(id,n,`Eigener Faktor: ${n}`)}
+function scaleIngredient(line,factor){return line.replace(/(\d+[,.]?\d*)\s*(g|kg|ml|l|EL|TL|Stück|Dose|Dosen|Pck\.?|Becher)?/gi,(m,num,unit="",offset,str)=>{const val=parseFloat(num.replace(",",".")); if(!Number.isFinite(val))return m; const before=String(str).slice(0,offset).toLowerCase(); if(!unit && /(mehl|dinkel|weizen|roggen|emmer|einkorn|vollkorn|type|typ)\s*$/.test(before))return m; let scaled=val*factor; scaled=(unit.toLowerCase()==="kg"||unit.toLowerCase()==="l")?Math.round(scaled*100)/100:Math.round(scaled*10)/10; return `${String(scaled).replace(".",",")}${unit?" "+unit:(m.length>num.length?" ":"")}`;})}
+function toggleFav(id){state.favs=state.favs.includes(id)?state.favs.filter(x=>x!==id):[...state.favs,id];save();render()} function closeModal(){document.getElementById("modalRoot").innerHTML="";unlockScroll();}
+let _modalScrollY=0;
+function lockScroll(){if(document.body.dataset.locked==="1")return;_modalScrollY=window.scrollY||window.pageYOffset||0;document.body.style.position="fixed";document.body.style.top=(-_modalScrollY)+"px";document.body.style.left="0";document.body.style.right="0";document.body.style.width="100%";document.body.dataset.locked="1";}
+function unlockScroll(){if(document.body.dataset.locked!=="1")return;document.body.style.position="";document.body.style.top="";document.body.style.left="";document.body.style.right="";document.body.style.width="";document.body.dataset.locked="";window.scrollTo(0,_modalScrollY||0);}
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.getElementById("modalRoot").innerHTML.trim()!=="")closeModal();});
+function toolsHTML(){
+ const stonewareIds = ["ofenmeister","lilly","ofenhexe","ofenzauberer","zauberstein","white-lady"];
+ const stonewareList = stonewareIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
+
+ const optionsHTML = stonewareList.map(p=>
+   `<option value="${p.id}">${p.emoji} ${p.label}</option>`
+ ).join("");
+
+ const productCardsHTML = stonewareList.map(p=>{
+   const img = productImages[p.id];
+   const note = productNotes[p.id];
+   const shop = SHOP_URLS[p.id] || "https://www.pamperedchef.de";
+   return `<div class="card">
+     <div class="product-mini">
+       ${img?`<img src="${img}" alt="${p.label}">`:""}
+       <div><h3>${p.emoji} ${p.label}</h3></div>
+     </div>
+     <p>${p.desc||""}</p>
+     ${note?`<div class="product-tip"><div class="product-tip-icon">💡</div><div>${note}</div></div>`:""}
+     <a class="btn-shop" href="${shop}" target="_blank" rel="noopener">🛒 Im Shop bestellen</a>
+   </div>`;
+ }).join("");
+
+ return `<div class="wrap">
+
+   <section class="hero">
+     <p class="kicker">Stoneware Tools</p>
+     <h2>Rezepte umrechnen, Stoneware entdecken.</h2>
+     <p>Wandle dein Lieblingsrezept fuer jedes Stoneware-Produkt um und finde direkt die passende Form.</p>
+   </section>
+
+   <!-- TIMER -->
+   <div class="card">
+     <h3>⏱️ Timer</h3>
+     <p>Behalte deine Backzeit im Blick - laeuft auch wenn du in anderen Tabs unterwegs bist.</p>
+
+     <div class="timer-display" id="timerDisplay">00:00</div>
+     <p class="timer-status" id="timerStatus">bereit</p>
+
+     <div class="timer-presets">
+       <button class="chip" onclick="timerSet(5*60)">5 min</button>
+       <button class="chip" onclick="timerSet(10*60)">10 min</button>
+       <button class="chip" onclick="timerSet(15*60)">15 min</button>
+       <button class="chip" onclick="timerSet(30*60)">30 min</button>
+       <button class="chip" onclick="timerSet(45*60)">45 min</button>
+       <button class="chip" onclick="timerSet(60*60)">1 h</button>
+     </div>
+
+     <div class="tool-row" style="margin-top:10px">
+       <input id="timerCustomMin" inputmode="numeric" placeholder="Minuten eingeben">
+       <button class="btn" onclick="timerSetCustom()">Setzen</button>
+     </div>
+
+     <div class="timer-controls">
+       <button class="btn" onclick="timerStart()">▶ Start</button>
+       <button class="btn secondary" onclick="timerPause()">⏸ Pause</button>
+       <button class="btn secondary" onclick="timerReset()">↺ Reset</button>
+     </div>
+   </div>
+
+   <!-- UMRECHNER -->
+   <div class="card">
+     <h3>🔄 Stoneware Rezept-Umrechner</h3>
+     <p style="margin-bottom:12px">Egal ob du etwas vom James in der White Lady backen willst oder ein Ofenmeister-Rezept fuer die Lilly halbierst - der Umrechner passt die Mengen automatisch an.</p>
+
+     <textarea id="recipeCalc" rows="6" placeholder="500 g Mehl
+350 ml Wasser
+10 g Salz
+1 TL Honig"></textarea>
+
+     <div class="tool-row" style="margin-top:10px">
+       <select id="convertFrom">${optionsHTML}</select>
+       <select id="convertTo">${optionsHTML}</select>
+     </div>
+
+     <button class="btn full" style="margin-top:10px" onclick="calcStonewareRecipe()">Umrechnen</button>
+
+     <div id="conversionFactor"></div>
+     <div id="recipeOut" style="margin-top:12px"></div>
+   </div>
+
+   <!-- PRODUKT-UEBERSICHT -->
+   <section class="hero" style="margin-top:24px">
+     <p class="kicker">Deine Stoneware</p>
+     <h2>Produkt-Uebersicht</h2>
+     <p>Alle Stoneware-Produkte mit Tipps und direkter Bestellmoeglichkeit.</p>
+   </section>
+
+   <div class="grid two">
+     ${productCardsHTML}
+   </div>
+
+ </div>`;
+}
+function finderHTML(){return `<div class="wrap"><section class="hero"><p class="kicker">Produktfinder</p><h2>Welche Stoneware passt?</h2><p>Wähle aus, was du machen möchtest.</p></section><div class="grid two">${[["Brot backen","Ofenmeister, Lilly, Zauberstein"],["Pizza & Flammkuchen","James, Zauberstein"],["Familien-Aufläufe","Ofenhexe, Ofenmeister"],["Kuchen & Zimtschnecken","White Lady, Lilly"],["Suppen & Eintöpfe","Ofenmeister"],["Kleine Portionen","Lilly"]].map(x=>`<div class="card"><h3>${x[0]}</h3><p>${x[1]}</p></div>`).join("")}</div></div>`}
+function openImport(){lockScroll();document.getElementById("modalRoot").innerHTML=`<div class="modal" onclick="closeModal()"><div class="modal-box" onclick="event.stopPropagation()"><div class="modal-head"><button class="close" onclick="closeModal()">×</button><p class="kicker">Rezeptimport</p><h2 style="font-family:Cormorant Garamond,serif;margin:0;font-size:32px">📸 Screenshot → Rezept</h2></div><div class="modal-body"><div class="card"><p>Screenshot hochladen oder Rezepttext einfügen.</p><input type="file" accept="image/*" onchange="ocrFile(this.files[0])" style="margin-top:12px"><textarea id="importText" rows="8" placeholder="Rezepttext…" style="margin-top:12px"></textarea><div class="tool-row"><input id="importTitle" placeholder="Titel"><select id="importProduct">${products.filter(p=>!["home","all","tools","finder","shopping"].includes(p.id)).map(p=>`<option value="${p.id}">${p.label}</option>`).join("")}</select></div><button class="btn full" onclick="saveImport()">Als Rezept speichern</button><p id="ocrStatus" class="small"></p></div></div></div></div>`}
+async function ocrFile(file){if(!file||!window.Tesseract)return; const saveBtn=document.querySelector(".modal-box .btn.full"); if(saveBtn){saveBtn.disabled=true; saveBtn.style.opacity="0.5"; saveBtn.textContent="Bitte warten – Text wird erkannt …";} document.getElementById("ocrStatus").textContent="Text wird erkannt … (kann etwas dauern)"; try{const res=await Tesseract.recognize(file,"deu+eng"); const text=res?.data?.text||""; document.getElementById("importText").value=text.trim(); document.getElementById("importTitle").value=(text.split(/\n/).map(x=>x.trim()).filter(Boolean)[0]||"").slice(0,60); document.getElementById("ocrStatus").textContent="Text erkannt – bitte pruefen, dann speichern.";}catch(e){document.getElementById("ocrStatus").textContent="OCR hat nicht geklappt. Text bitte manuell einfuegen.";} finally{ if(saveBtn){saveBtn.disabled=false; saveBtn.style.opacity="1"; saveBtn.textContent="Als Rezept speichern";} }}
+let _importSaving = false;
+function saveImport(){
+ if(_importSaving) return; // Schutz gegen Mehrfach-Klick
+ const text=document.getElementById("importText").value.trim();
+ const title=document.getElementById("importTitle").value.trim()||"Eigenes Rezept";
+ const product=document.getElementById("importProduct").value;
+ if(!text){ alert("Bitte zuerst einen Screenshot hochladen oder Rezepttext einfuegen."); return; }
+ _importSaving = true;
+ const btn = document.querySelector(".modal-box .btn.full");
+ if(btn){ btn.textContent = "Wird gespeichert …"; btn.style.opacity = "0.6"; }
+
+ const lines=text.split(/\n/).map(x=>x.trim()).filter(Boolean);
+ // Zutat = beginnt mit Menge + Einheit (g, ml, EL ...). Nummerierte Schritte (1. / 1)) zaehlen NICHT als Zutat.
+ const isIngredient = l =>
+   /^(½|¼|¾|⅓|⅔|\d+([.,]\d+)?)\s*(g|kg|ml|l|el|tl|stk|stueck|stück|prise|prisen|pck|packung|dose|dosen|becher|tasse|bund|zehe|zehen|scheibe|scheiben)\b/i.test(l)
+   && !/^\d+[.)]\s/.test(l);
+ const ing = lines.filter(isIngredient).slice(0,40);
+ const steps = lines.filter(l=>!isIngredient(l)).slice(1,60);
+
+ state.custom.push({id:Date.now(),product,title,category:"Import",time:"",temp:"",portions:"",ingredients:ing.length?ing:["Bitte Zutaten pruefen"],steps:steps.length?steps:["Bitte Zubereitung pruefen"]});
+ save();
+ closeModal();
+ showTab(product);
+ showToast(`✓ Rezept "${title}" gespeichert.`);
+ setTimeout(()=>{ _importSaving = false; }, 800);
+}
+
+function deleteCustomRecipe(id){
+ if(!confirm("Dieses importierte Rezept wirklich loeschen?")) return;
+ state.custom = state.custom.filter(r=>String(r.id)!==String(id));
+ save();
+ closeModal();
+ render();
+ showToast("Rezept geloescht.");
+}
+function copyCaption(id){const r=allRecipes().find(x=>String(x.id)===String(id)); const text=`${r.title}\n\n${productName(r.product)} · ${r.category}\n\nSpeichern, nachmachen & teilen 💛\n\n#stoneware #pamperedchefdeutschland #familienküche #ofengericht`; navigator.clipboard?.writeText(text); document.getElementById("igStatus").textContent="Caption kopiert ✓"}
+async function downloadIG(id,format){const r=allRecipes().find(x=>String(x.id)===String(id)); const mount=document.getElementById("exportMount"); mount.innerHTML=`<div id="exportCard" class="export-card ${format==='story'?'story':''}"><div style="background:#6B2E44;color:white;display:inline-block;border-radius:999px;padding:14px 24px;font-weight:900;letter-spacing:.08em">${productName(r.product).toUpperCase()}</div><div class="export-title">${escapeHtml(r.title)}</div><div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px"><span class="pill">${r.temp||"Temperatur nach Rezept"}</span><span class="pill">${r.time||"Zeit nach Rezept"}</span><span class="pill">${r.category}</span></div><div style="background:rgba(255,255,255,.86);border:2px solid #EDD5DE;border-radius:34px;padding:30px;margin-top:24px"><h2 style="font-family:Cormorant Garamond,serif;font-size:42px;margin:0 0 18px;color:#6B2E44">Zutaten</h2>${r.ingredients.slice(0,format==='story'?7:6).map(x=>`<div style="font-size:${format==='story'?31:25}px;line-height:1.35;margin-bottom:12px;color:#6B3F54">◆ ${escapeHtml(x)}</div>`).join("")}</div><div style="position:absolute;bottom:58px;left:78px;right:78px;border-top:2px solid #EDD5DE;padding-top:24px;font-size:28px;font-weight:900;color:#6B2E44;text-align:center"><span>Speichern & nachmachen 💛</span></div></div>`; if(!window.html2canvas){document.getElementById("igStatus").textContent="Export-Bibliothek lädt nicht.";return} const canvas=await html2canvas(document.getElementById("exportCard"),{scale:2,backgroundColor:null}); const a=document.createElement("a"); a.href=canvas.toDataURL("image/png"); a.download=`${slug(r.title)}-${format}.png`; a.click(); document.getElementById("igStatus").textContent="PNG erstellt ✓"}
+function slug(s){return String(s).toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60)||"rezept"} function escapeHtml(str){return String(str||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+
+// ============================================================
+// TIMER - laeuft im Hintergrund auch beim Tab-Wechsel
+// ============================================================
+window.stonewareTimer = window.stonewareTimer || {
+ running: false,
+ remaining: 0,
+ endTime: 0,
+ interval: null
+};
+
+function timerSet(seconds){
+ const t = window.stonewareTimer;
+ if(t.interval){clearInterval(t.interval); t.interval=null;}
+ t.running = false;
+ t.remaining = Math.max(0, Math.round(seconds));
+ t.endTime = 0;
+ renderTimer();
+}
+
+function timerSetCustom(){
+ const inp = document.getElementById("timerCustomMin");
+ if(!inp) return;
+ const min = parseFloat(String(inp.value).replace(",","."));
+ if(!Number.isFinite(min) || min <= 0){
+   alert("Bitte eine Zahl groesser als 0 eingeben.");
+   return;
+ }
+ timerSet(min * 60);
+ inp.value = "";
+}
+
+function timerStart(){
+ const t = window.stonewareTimer;
+ if(t.remaining <= 0){
+   alert("Bitte zuerst eine Zeit waehlen (Preset oder eigene Minuten).");
+   return;
+ }
+ if("Notification" in window && Notification.permission === "default"){
+   try{ Notification.requestPermission(); }catch(e){}
+ }
+ t.running = true;
+ t.endTime = Date.now() + t.remaining * 1000;
+ if(t.interval) clearInterval(t.interval);
+ t.interval = setInterval(timerTick, 250);
+ renderTimer();
+}
+
+function timerTick(){
+ const t = window.stonewareTimer;
+ const left = Math.max(0, Math.round((t.endTime - Date.now())/1000));
+ t.remaining = left;
+ if(left <= 0) timerFinished(); else renderTimer();
+}
+
+function timerPause(){
+ const t = window.stonewareTimer;
+ if(!t.running) return;
+ if(t.interval){clearInterval(t.interval); t.interval=null;}
+ t.running = false;
+ renderTimer();
+}
+
+function timerReset(){ timerSet(0); }
+
+function timerFinished(){
+ const t = window.stonewareTimer;
+ if(t.interval){clearInterval(t.interval); t.interval=null;}
+ t.running = false;
+ t.remaining = 0;
+ renderTimer();
+ // 3x Beep
+ try{
+   const ctx = new (window.AudioContext || window.webkitAudioContext)();
+   for(let i=0;i<3;i++){
+     const osc = ctx.createOscillator();
+     const gain = ctx.createGain();
+     osc.connect(gain); gain.connect(ctx.destination);
+     osc.frequency.value = 660; osc.type = "sine";
+     const t0 = ctx.currentTime + i*0.55;
+     osc.start(t0);
+     gain.gain.setValueAtTime(0.0001, t0);
+     gain.gain.exponentialRampToValueAtTime(0.25, t0 + 0.02);
+     gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.45);
+     osc.stop(t0 + 0.5);
+   }
+ }catch(e){}
+ if("Notification" in window && Notification.permission === "granted"){
+   try{ new Notification("🌸 Stoneware Timer fertig!", {body:"Deine Zeit ist abgelaufen.",icon:"icons/icon-192.png"}); }catch(e){}
+ }
+ const display = document.getElementById("timerDisplay");
+ if(display){ display.classList.add("finished"); setTimeout(()=>display.classList.remove("finished"), 2100); }
+ setTimeout(()=>alert("🌸 Timer fertig!"), 50);
+}
+
+function renderTimer(){
+ const t = window.stonewareTimer;
+ const display = document.getElementById("timerDisplay");
+ if(!display) return;
+ const min = Math.floor(t.remaining/60);
+ const sec = t.remaining % 60;
+ display.textContent = `${String(min).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+ const status = document.getElementById("timerStatus");
+ if(status){
+   if(t.running){ status.textContent = "läuft …"; status.classList.add("running"); }
+   else if(t.remaining > 0){ status.textContent = "pausiert"; status.classList.remove("running"); }
+   else{ status.textContent = "bereit"; status.classList.remove("running"); }
+ }
+}
+
+// Parse Rezept-Zeit-Strings wie "55–60 Min", "1 Std", "30 Min", "1:30 h"
+function parseRecipeTime(timeStr){
+ if(!timeStr) return 0;
+ const str = String(timeStr).toLowerCase().replace(/–|—/g,"-");
+ // Bereich: "55-60 min" oder "1-2 std"
+ const range = str.match(/(\d+(?:[.,]\d+)?)\s*-\s*(\d+(?:[.,]\d+)?)\s*(min|minut|std|stunde|h|sek)/);
+ if(range){
+   const val = Math.max(parseFloat(range[1].replace(",",".")), parseFloat(range[2].replace(",",".")));
+   return convertToSeconds(val, range[3]);
+ }
+ // Format "1:30 h" oder "1:30 std"
+ const hm = str.match(/(\d+):(\d+)\s*(h|std|stunde)/);
+ if(hm){
+   return (parseInt(hm[1]) * 3600) + (parseInt(hm[2]) * 60);
+ }
+ // Einzelwert: "45 min", "1.5 h", "30 minuten"
+ const single = str.match(/(\d+(?:[.,]\d+)?)\s*(min|minut|std|stunde|h|sek)/);
+ if(single){
+   return convertToSeconds(parseFloat(single[1].replace(",",".")), single[2]);
+ }
+ // Nur Zahl ohne Einheit -> Minuten annehmen
+ const num = str.match(/(\d+(?:[.,]\d+)?)/);
+ if(num){
+   return Math.round(parseFloat(num[1].replace(",",".")) * 60);
+ }
+ return 0;
+}
+
+function convertToSeconds(val, unit){
+ if(unit === "h" || unit.startsWith("std") || unit.startsWith("stunde")) return Math.round(val * 3600);
+ if(unit.startsWith("sek")) return Math.round(val);
+ return Math.round(val * 60); // min als Standard
+}
+
+function startTimerFromRecipe(timeStr, title){
+ const secs = parseRecipeTime(timeStr);
+ if(secs <= 0){
+   alert("Konnte die Zeit nicht erkennen. Bitte im Tools-Tab manuell setzen.");
+   showTab("tools");
+   return;
+ }
+ timerSet(secs);
+ timerStart();
+ // Toast statt Tab-Wechsel - User bleibt im Rezept
+ showToast(`⏱ Timer fuer "${title}" gestartet (${Math.round(secs/60)} Min). Schau im Tools-Tab.`);
+}
+
+function addRecipeToShopping(id){
+ const r = allRecipes().find(x=>String(x.id)===String(id));
+ if(!r) return;
+ if(!window.shoppingItems) window.shoppingItems = JSON.parse(localStorage.getItem("shopping-items")||"[]");
+ let added = 0;
+ r.ingredients.forEach(x=>{
+   const txt = String(x).trim();
+   if(!txt) return;
+   // Duplikate vermeiden
+   if(!window.shoppingItems.some(it=>it.text === txt)){
+     window.shoppingItems.push({text: txt, done: false});
+     added++;
+   }
+ });
+ localStorage.setItem("shopping-items", JSON.stringify(window.shoppingItems));
+ if(typeof renderShopping === "function") renderShopping();
+ showToast(`🧾 ${added} Zutaten zur Einkaufsliste hinzugefuegt.`);
+}
+
+// Eleganter Toast statt alert()
+function showToast(msg){
+ let el = document.getElementById("smkToast");
+ if(!el){
+   el = document.createElement("div");
+   el.id = "smkToast";
+   el.className = "smk-toast";
+   document.body.appendChild(el);
+ }
+ el.textContent = msg;
+ el.classList.add("show");
+ clearTimeout(window._toastTimer);
+ window._toastTimer = setTimeout(()=>el.classList.remove("show"), 3200);
+}
+
+// Wandelt Zeitangaben in einem Schritt-Text in klickbare Timer-Chips um
+function enhanceStepWithTimer(stepText, recipeTitle){
+ const safe = escapeHtml(stepText);
+ const safeTitle = String(recipeTitle||"Schritt").replace(/"/g,"&quot;");
+ return safe.replace(
+   /(\d+(?:[.,]\d+)?(?:\s*[–\-]\s*\d+(?:[.,]\d+)?)?\s+(?:Min(?:uten?)?|Std(?:n|e|en)?|Stunden?|h)\b)/gi,
+   (match) => {
+     const safeTime = match.trim().replace(/"/g,"&quot;");
+     return `<button class="step-timer" data-time="${safeTime}" data-title="${safeTitle}" onclick="startStepTimerFromButton(this)">⏱ ${match.trim()}</button>`;
+   }
+ );
+}
+
+function startStepTimerFromButton(btn){
+ const timeStr = btn.dataset.time;
+ const title = btn.dataset.title || "Schritt";
+ startTimerFromRecipe(timeStr, title);
+}
+
+// Wrap render to also refresh timer view + insert back-bar on non-home tabs
+const _origRender = render;
+render = function(){
+ _origRender();
+ if(state.tab==="tools") renderTimer();
+ if(state.tab !== "home"){
+   const c = document.getElementById("content");
+   const firstWrap = c && c.querySelector(".wrap");
+   if(firstWrap && !firstWrap.querySelector(".back-bar")){
+     const bar = document.createElement("div");
+     bar.className = "back-bar";
+     bar.setAttribute("role","button");
+     bar.setAttribute("tabindex","0");
+     bar.onclick = function(){ showTab("home"); };
+     bar.innerHTML = '<span class="back-bar-arrow">←</span><span>Zurück zur Startseite</span>';
+     firstWrap.insertBefore(bar, firstWrap.firstChild);
+   }
+ }
+};
+
+render();
+</script>
+
+<!-- ============ SERVICE WORKER REGISTRIERUNG ============ -->
+<!-- Macht die App offlinefaehig. Funktioniert nur ueber https:// oder localhost. -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(function (reg) {
+        console.log('Stoneware PWA aktiv. Scope:', reg.scope);
+      })
+      .catch(function (err) {
+        console.log('Service Worker nicht registriert (kein Problem, App laeuft trotzdem):', err);
+      });
+  });
+}
+</script>
+<!-- ============ ENDE SERVICE WORKER ============ -->
+</body>
+</html>

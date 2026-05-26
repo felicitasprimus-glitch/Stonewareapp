@@ -1,95 +1,73 @@
-/**
- * Stoneware App - Service Worker
- *
- * Macht die App offlinefähig durch intelligentes Caching.
- * - Erst-Installation: Kernfiles werden gespeichert
- * - Jeder Request: Aus Cache wenn vorhanden, sonst Netzwerk, sonst Cache-Fallback
- * - Bei neuer Version: Alter Cache wird aufgeräumt
- *
- * WICHTIG: Bei Code-Änderungen an der App muss die CACHE_VERSION erhöht werden
- * (z.B. von 'v1' auf 'v2'), damit Browser den neuen Code laden.
- */
+// ============================================================
+// Stoneware App - Service Worker (selbst-aktualisierend)
+// Ersetzt die bisherige service-worker.js.
+// Du musst hier nichts mehr aendern - Updates kommen ab jetzt
+// automatisch an, sobald du eine neue Version auf GitHub laedst.
+// ============================================================
 
-const CACHE_VERSION = 'stoneware-v1';
+const VERSION = "stoneware-v2";
 
-// Diese Dateien werden bei der Installation sofort gecacht
-const PRECACHE_URLS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-512-maskable.png',
-  './icons/apple-touch-icon.png',
-  './icons/favicon-32.png'
-];
+// App-Grundgeruest, das fuer den Offline-Start vorgehalten wird
+const APP_SHELL = ["./", "./index.html", "./manifest.json"];
 
-// 1. INSTALL: Beim ersten Aufruf werden die Kernfiles im Cache abgelegt
-self.addEventListener('install', (event) => {
+// --- Installation: Grundgeruest cachen + sofort uebernehmen ---
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
-      .catch((err) => console.warn('SW install: precache failed', err))
+    caches.open(VERSION).then((cache) => cache.addAll(APP_SHELL)).catch(() => {})
   );
+  self.skipWaiting(); // neue Version nicht warten lassen, sofort aktiv
 });
 
-// 2. ACTIVATE: Alte Caches werden aufgeraeumt
-self.addEventListener('activate', (event) => {
+// --- Aktivierung: alte Caches loeschen + Kontrolle uebernehmen ---
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys()
+    caches
+      .keys()
       .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key !== CACHE_VERSION)
-            .map((key) => caches.delete(key))
-        )
+        Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k)))
       )
       .then(() => self.clients.claim())
   );
 });
 
-// 3. FETCH: Stale-While-Revalidate-Strategie
-//    - Cache zuerst liefern (sofortige Antwort)
-//    - Im Hintergrund aktualisieren
-//    - Bei Offline: Cache als Fallback
-self.addEventListener('fetch', (event) => {
-  const request = event.request;
+// --- Abruf-Strategie ---
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
 
-  // Nur GET-Requests cachen
-  if (request.method !== 'GET') return;
+  const accept = req.headers.get("accept") || "";
+  const isHTML = req.mode === "navigate" || accept.includes("text/html");
 
-  // Keine chrome-extension:// etc. anfassen
-  if (!request.url.startsWith('http')) return;
-
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const networkFetch = fetch(request)
-        .then((networkResponse) => {
-          // Nur erfolgreiche Antworten cachen
-          if (
-            networkResponse &&
-            networkResponse.status === 200 &&
-            (networkResponse.type === 'basic' || networkResponse.type === 'cors')
-          ) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_VERSION).then((cache) => {
-              cache.put(request, responseClone).catch(() => { /* silently ignore */ });
-            });
-          }
-          return networkResponse;
+  if (isHTML) {
+    // Seiten immer zuerst aus dem Netz -> jede Aenderung kommt sofort an.
+    // Kein Netz? Dann die gespeicherte Version anzeigen.
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(VERSION).then((c) => c.put("./index.html", copy));
+          return res;
         })
-        .catch(() => cachedResponse); // Offline-Fallback
+        .catch(() =>
+          caches.match("./index.html").then((r) => r || caches.match("./"))
+        )
+    );
+    return;
+  }
 
-      // Wenn im Cache: sofort zurueckgeben (schnell!) und im Hintergrund aktualisieren
-      return cachedResponse || networkFetch;
+  // Bilder, manifest usw.: schnell aus dem Cache, im Hintergrund frisch nachladen.
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      const fromNet = fetch(req)
+        .then((res) => {
+          if (res && res.status === 200 && res.type === "basic") {
+            const copy = res.clone();
+            caches.open(VERSION).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => cached);
+      return cached || fromNet;
     })
   );
-});
-
-// Bonus: Erlaubt der App, dem SW Befehle zu schicken (z.B. fuer Updates)
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
 });

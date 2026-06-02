@@ -206,6 +206,7 @@ alert("Zur Einkaufsliste hinzugefügt ✓");
 function renderTabs(){document.getElementById("tabs").innerHTML=products.map(p=>`<button class="tab ${state.tab===p.id?'active':''}" onclick="showTab('${p.id}')">${p.emoji} ${p.label}</button>`).join("")}
 function render(){renderTabs();const c=document.getElementById("content"); if(state.tab==="home") c.innerHTML=homeHTML(); else if(state.tab==="tools") c.innerHTML=toolsHTML(); else if(state.tab==="finder") c.innerHTML=finderHTML(); else if(state.tab==="shopping") c.innerHTML=shoppingHTML(); else c.innerHTML=recipesHTML(state.tab)}
 const productImages = {
+ "ofenhexe-rund":"assets/images/ofenhexe-rund.jpg",
  "lilly":"assets/images/lilly.jpg",
  "ofenmeister":"assets/images/ofenmeister.jpg",
  "ofenhexe":"assets/images/ofenhexe.jpg",
@@ -223,6 +224,7 @@ const productImages = {
 const productSizes = {
  "ofenmeister":  1.00,  // ~4 L Brottopf, 4 Personen
  "ofenhexe":     1.00,  // ~4,7 L Auflaufform, 4 Personen
+ "ofenhexe-rund": 0.70,  // runde Ofenhexe ~3 L (Schaetzwert)
  "ofenzauberer": 1.00,  // grosses Backblech (James)
  "zauberstein":  0.85,  // etwas kleinere Flaeche
  "white-lady":   0.85,  // etwas kleinere Flaeche
@@ -237,6 +239,7 @@ const SHOP_URLS = {
  "ofenmeister":  "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/Deep%20Covered%20Baker-2023",
  "lilly":        "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/Mini%20Deep%20Covered%20Baker-2023",
  "ofenhexe":     "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/Rectangular%20Baker",
+ "ofenhexe-rund": "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware",
  "ofenzauberer": "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/Stone%20Bar%20Pan",
  "zauberstein":  "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/Zauberstein%20plus",
  "white-lady":   "https://www.pamperedchef.eu/pws/FelicitasReitmeier/store/DEO/catalog/Stoneware/White%20Round%20Stone",
@@ -274,7 +277,7 @@ function lockScroll(){if(document.body.dataset.locked==="1")return;_modalScrollY
 function unlockScroll(){if(document.body.dataset.locked!=="1")return;document.body.style.position="";document.body.style.top="";document.body.style.left="";document.body.style.right="";document.body.style.width="";document.body.dataset.locked="";window.scrollTo(0,_modalScrollY||0);}
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.getElementById("modalRoot").innerHTML.trim()!=="")closeModal();});
 function toolsHTML(){
- const stonewareIds = ["ofenmeister","lilly","ofenhexe","ofenzauberer","zauberstein","white-lady"];
+ const stonewareIds = ["ofenmeister","lilly","ofenhexe","ofenhexe-rund","ofenzauberer","zauberstein","white-lady"];
  const stonewareList = stonewareIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
 
  const optionsHTML = stonewareList.map(p=>

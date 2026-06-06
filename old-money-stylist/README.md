@@ -37,19 +37,50 @@ old-money-stylist/
 │  ├─ scraper.py       Playwright + httpx/BeautifulSoup Fallback
 │  ├─ scoring.py       Old-Money Stil-Bewertung (offline-Heuristik)
 │  ├─ outfits.py       Outfit-Generator je Anlass
-│  ├─ storage.py       Favoriten in data/store.json
+│  ├─ storage.py       optionaler JSON-Speicher (für lokale API-Nutzung)
 │  └─ requirements.txt
-└─ frontend/           React + Vite
-   ├─ src/App.jsx      Hauptansicht
-   ├─ src/components/  Produkt- & Outfit-Karten
-   └─ src/lib/         API-Client + PDF-Export
+├─ frontend/           React + Vite
+│  ├─ src/App.jsx      Hauptansicht
+│  ├─ src/components/  Produkt- & Outfit-Karten
+│  └─ src/lib/         API-Client, Browser-Speicher & PDF-Export
+├─ Dockerfile          Ein-Container-Deployment (Frontend + Backend)
+└─ ../render.yaml      Blueprint für Hosting auf Render
 ```
+
+Die Web-Oberfläche speichert Favoriten direkt im **Browser (localStorage)** –
+deshalb braucht die gehostete Version keine Datenbank und nichts geht verloren,
+wenn der Server neu startet.
 
 Frontend (Port **5173**) spricht über einen Proxy mit dem Backend (Port **8000**).
 
 ---
 
-## 🚀 Installation
+## 🌐 Als echten Web-Link online stellen (empfohlen, ohne Installation)
+
+So bekommst du eine **öffentliche URL**, die du im Browser oder am Handy öffnest –
+ganz ohne etwas auf deinem Computer zu installieren. Das Repo enthält bereits
+alles dafür (`Dockerfile` + `render.yaml`); Frontend und Backend laufen als **ein**
+Dienst unter **einer** URL.
+
+Mit **Render.com** (kostenloses Kontingent):
+
+1. Konto auf <https://render.com> erstellen (mit GitHub anmelden ist am einfachsten).
+2. Oben auf **New** → **Blueprint** klicken.
+3. Das Repository **`Stonewareapp`** auswählen. Render erkennt die Datei
+   `render.yaml` automatisch und schlägt den Dienst *„old-money-outfit-stylist“* vor.
+4. Auf **Apply** / **Create** klicken und warten, bis der Build fertig ist
+   (beim ersten Mal einige Minuten).
+5. Fertig – Render zeigt dir eine Adresse wie
+   `https://old-money-outfit-stylist.onrender.com`. Das ist dein Link. 🎉
+
+> Hinweis: Beim kostenlosen Render-Plan „schläft“ der Dienst nach längerer
+> Inaktivität ein; der erste Aufruf danach dauert dann ~30 Sekunden.
+> Deine Favoriten werden im Browser gespeichert und bleiben trotzdem erhalten.
+> Alternativen mit demselben `Dockerfile`: **Railway** oder **Fly.io**.
+
+---
+
+## 🚀 Lokal installieren (volle Version mit Auto-Scraping)
 
 Voraussetzungen: **Python 3.10+** und **Node.js 18+**.
 
@@ -65,16 +96,16 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 # Abhängigkeiten installieren
 pip install -r requirements.txt
 
-# Playwright-Browser installieren (für JS-lastige Shops)
-playwright install chromium
+# OPTIONAL: Playwright für JS-lastige Shops (besseres Auslesen)
+pip install playwright && playwright install chromium
 
 # Server starten
 uvicorn main:app --reload --port 8000
 ```
 
-> Hinweis: `playwright install chromium` ist optional. Ohne Playwright nutzt
-> das Tool automatisch einen einfacheren HTTP-Scraper – viele Shops funktionieren
-> auch damit, und der manuelle Modus geht immer.
+> Hinweis: Playwright ist optional. Ohne Playwright nutzt das Tool automatisch
+> einen einfacheren HTTP-Scraper – viele Shops funktionieren auch damit, und der
+> manuelle Modus geht immer.
 
 ### 2. Frontend (React/Vite)
 

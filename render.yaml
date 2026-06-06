@@ -1,0 +1,14 @@
+# Render-Blueprint NUR für den "Old Money Outfit Stylist".
+# Die bestehende Stoneware-App ist davon nicht betroffen.
+#
+# Nutzung: auf render.com -> "New" -> "Blueprint" -> dieses Repo auswählen.
+# Render baut den Docker-Container und stellt eine öffentliche URL bereit.
+services:
+  - type: web
+    name: old-money-outfit-stylist
+    runtime: docker
+    dockerfilePath: ./old-money-stylist/Dockerfile
+    dockerContext: ./old-money-stylist
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /api/health

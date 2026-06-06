@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { api } from './lib/api.js'
+import { loadStore, setStatus as storeSetStatus } from './lib/store.js'
 import { exportOutfitsPdf } from './lib/pdf.js'
 import ProductCard from './components/ProductCard.jsx'
 import OutfitCard from './components/OutfitCard.jsx'
@@ -43,18 +44,17 @@ export default function App() {
   // Filter
   const [onlyHighlights, setOnlyHighlights] = useState(false)
 
-  // Store beim Start laden
+  // Store (Browser-Speicher) beim Start laden
   useEffect(() => {
-    api.store().then((data) => {
-      const map = {}
-      ;['favorites', 'saved', 'rejected'].forEach((b) =>
-        (data[b] || []).forEach((p) => (map[idOf(p)] = b))
-      )
-      setStatusMap(map)
-      // Favoriten/gespeicherte auch in die Produktliste uebernehmen
-      const known = [...(data.favorites || []), ...(data.saved || []), ...(data.rejected || [])]
-      setProducts((prev) => mergeProducts(prev, known))
-    }).catch(() => {})
+    const data = loadStore()
+    const map = {}
+    ;['favorites', 'saved', 'rejected'].forEach((b) =>
+      (data[b] || []).forEach((p) => (map[idOf(p)] = b))
+    )
+    setStatusMap(map)
+    // Favoriten/gespeicherte auch in die Produktliste uebernehmen
+    const known = [...(data.favorites || []), ...(data.saved || []), ...(data.rejected || [])]
+    setProducts((prev) => mergeProducts(prev, known))
   }, [])
 
   function mergeProducts(a, b) {
@@ -84,28 +84,15 @@ export default function App() {
     }
   }
 
-  async function setStatus(product, status) {
+  function setStatus(product, status) {
     const id = idOf(product)
-    const prev = statusMap[id]
-    // optimistic update
+    storeSetStatus(product, status)
     setStatusMap((m) => {
       const n = { ...m }
       if (status) n[id] = status
       else delete n[id]
       return n
     })
-    try {
-      if (prev && prev !== status) {
-        await api.removeFromStore(prev, id)
-      }
-      if (status) {
-        await api.addToStore(status, product)
-      } else if (prev) {
-        await api.removeFromStore(prev, id)
-      }
-    } catch (err) {
-      setError('Speichern fehlgeschlagen: ' + err.message)
-    }
   }
 
   async function handleManualSubmit(e) {
@@ -159,12 +146,20 @@ export default function App() {
   }
 
   async function buildFavoriteOutfits() {
+    const data = loadStore()
+    const pool = [...data.favorites, ...data.saved]
+    if (pool.length < 2) {
+      setInfo('Markiere zuerst einige Teile mit ★ (Favorit) oder ⌖ (Merken).')
+      return
+    }
     setBuilding(true); setError('')
     try {
-      const res = await api.favoriteOutfits(null)
+      const boost = data.favorites.map(idOf)
+      const res = await api.outfits(pool, null, boost)
       setFavOutfits(res.outfits || [])
       if (!res.outfits?.length) {
-        setInfo(res.message || 'Noch keine Favoriten gespeichert.')
+        setInfo('Aus den Favoriten ließ sich noch kein vollständiges Outfit bauen – '
+          + 'es fehlen Kategorien (z.B. Schuhe oder Tasche).')
       }
     } catch (err) {
       setError(err.message)

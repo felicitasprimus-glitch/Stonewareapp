@@ -5,11 +5,14 @@
 
 import { detectCategory, detectColor, scoreProduct } from './scoring.js'
 
+// Mehrere kostenlose Proxies. r.jina.ai rendert sogar JavaScript-Seiten,
+// hilft also bei modernen Shops, die Produkte per JS nachladen.
 const PROXIES = [
-  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
-  (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
-  (u) => u, // direkter Versuch (manche Shops erlauben CORS)
+  { build: (u) => `https://r.jina.ai/${u}`, headers: { 'X-Return-Format': 'html' } },
+  { build: (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}` },
+  { build: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}` },
+  { build: (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}` },
+  { build: (u) => u }, // direkter Versuch (manche Shops erlauben CORS)
 ]
 
 const PRICE_RE = /(?:€|EUR|CHF|£|\$)\s?(\d[\d.\s]*[,.]\d{2})|(\d[\d.\s]*[,.]\d{2})\s?(?:€|EUR|CHF)/
@@ -207,25 +210,34 @@ function parseHeuristic(doc, baseUrl, limit = 60) {
 }
 
 async function fetchHtml(url) {
-  for (const build of PROXIES) {
+  let reached = false
+  for (const proxy of PROXIES) {
     try {
-      const res = await fetch(build(url), { headers: { Accept: 'text/html' } })
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 20000)
+      const res = await fetch(proxy.build(url), {
+        signal: ctrl.signal,
+        headers: { Accept: 'text/html', ...(proxy.headers || {}) },
+      })
+      clearTimeout(timer)
       if (!res.ok) continue
       const text = await res.text()
-      if (text && text.length > 500) return text
+      reached = true
+      if (text && text.length > 800) return { html: text, reached }
     } catch { /* nächsten Proxy versuchen */ }
   }
-  return null
+  return { html: null, reached }
 }
 
 export async function scrape(url) {
   let target = url.trim()
   if (!/^https?:\/\//.test(target)) target = 'https://' + target
 
-  const html = await fetchHtml(target)
+  const { html, reached } = await fetchHtml(target)
   if (!html) {
     return { url: target, source: domain(target), method: 'browser', strategy: 'none',
-      count: 0, products: [], blocked: true }
+      count: 0, products: [], blocked: true,
+      reason: reached ? 'empty' : 'fetch_failed' }
   }
 
   const doc = new DOMParser().parseFromString(html, 'text/html')
@@ -245,7 +257,8 @@ export async function scrape(url) {
   products = Array.from(deduped.values())
 
   return { url: target, source: domain(target), method: 'browser', strategy,
-    count: products.length, products, blocked: products.length === 0 }
+    count: products.length, products, blocked: products.length === 0,
+    reason: products.length === 0 ? 'no_products' : 'ok' }
 }
 
 export function scoreManual({ link, name, price, image, color, category, currency = 'EUR' }) {

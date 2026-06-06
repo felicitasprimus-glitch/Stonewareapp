@@ -150,10 +150,24 @@ Dann im Browser öffnen: **http://localhost:5173**
 4. **⬇ Als PDF exportieren** für die Shoppingliste.
 5. Tab **Favoriten** → *Bessere Outfits aus Favoriten* nutzt deine Lieblingsteile.
 
-### Wenn ein Shop blockiert
+### Produkte aus jedem Shop übernehmen (das Lesezeichen / „Bookmarklet“)
 
-Manche Shops (z. B. mit aggressivem Bot-Schutz) lassen sich nicht auslesen.
-Dann erscheint ein Hinweis – klicke auf **„+ Produkt manuell hinzufügen“** und
+Große Shops (Zara, Massimo Dutti, Mango, Ralph Lauren …) blockieren automatisches
+Auslesen grundsätzlich und laden Produkte per JavaScript. **Zuverlässig** geht es
+mit dem eingebauten Lesezeichen:
+
+1. In der App die Box **„🤍 Produkte zuverlässig aus jedem Shop übernehmen“** öffnen.
+2. Den Button **🤍 In Stylist** in die Lesezeichen-Leiste des Browsers ziehen.
+3. Im Shop ein Produkt öffnen, das dir gefällt, und auf das Lesezeichen klicken –
+   das Produkt erscheint automatisch im Stylist (gemerkt) und wird bewertet.
+
+Das funktioniert, weil der Code direkt auf der echten Shop-Seite läuft (kein
+CORS, kein Bot-Block). Danach **✨ Outfits erstellen** wie gewohnt.
+
+### Wenn gar nichts klappt: manuell
+
+Du kannst jedes Produkt auch von Hand eintragen – klicke auf
+**„+ Produkt manuell hinzufügen“** und
 trage Name, Preis, Bild-URL und Link ein. Die Stil-Bewertung läuft automatisch.
 
 ---

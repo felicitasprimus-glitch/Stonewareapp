@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { api } from './lib/api.js'
 import { loadStore, setStatus as storeSetStatus } from './lib/store.js'
+import { makeBookmarklet, readAddFromHash } from './lib/bookmarklet.js'
 import { exportOutfitsPdf } from './lib/pdf.js'
 import ProductCard from './components/ProductCard.jsx'
 import OutfitCard from './components/OutfitCard.jsx'
@@ -43,6 +44,32 @@ export default function App() {
 
   // Filter
   const [onlyHighlights, setOnlyHighlights] = useState(false)
+  const [showCapture, setShowCapture] = useState(false)
+
+  // Bookmarklet, das auf die aktuelle App-Adresse zeigt
+  const bookmarklet = useMemo(
+    () => makeBookmarklet(window.location.origin + window.location.pathname),
+    []
+  )
+
+  // Per Bookmarklet übergebenes Produkt (#add=...) übernehmen
+  useEffect(() => {
+    const raw = readAddFromHash()
+    if (!raw) return
+    api.manual({
+      link: raw.link,
+      name: raw.name,
+      price: raw.price ? parseFloat(String(raw.price).replace(/[^0-9.,]/g, '').replace(',', '.')) : null,
+      image: raw.image,
+      color: raw.color,
+    }).then((prod) => {
+      setProducts((prev) => mergeProducts(prev, [prod]))
+      storeSetStatus(prod, 'saved')
+      setStatusMap((m) => ({ ...m, [idOf(prod)]: 'saved' }))
+      setInfo(`„${prod.name}“ wurde aus dem Shop übernommen und gemerkt.`)
+    }).catch(() => {})
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+  }, [])
 
   // Store (Browser-Speicher) beim Start laden
   useEffect(() => {
@@ -70,15 +97,24 @@ export default function App() {
     try {
       const res = await api.scrape(url.trim())
       if (res.blocked || res.count === 0) {
-        setError('Es konnten keine Produkte ausgelesen werden – die Seite blockiert evtl. ' +
-                 'das Scraping. Füge Produkte manuell hinzu (Button unten).')
+        const why = {
+          fetch_failed: 'Die Shop-Seite ließ sich nicht laden – viele große Shops '
+            + '(z.B. Zara, Massimo Dutti) blockieren automatisches Auslesen.',
+          no_products: 'Die Seite wurde geladen, aber es waren keine Produktdaten '
+            + 'erkennbar (oft, weil der Shop Produkte per JavaScript nachlädt).',
+          empty: 'Die Seite kam leer zurück.',
+        }[res.reason] || 'Es konnten keine Produkte ausgelesen werden.'
+        setError(why + ' ➜ Am zuverlässigsten: das „🤍 In Stylist“-Lesezeichen nutzen '
+          + '(siehe Box oben) oder ein einzelnes Produkt manuell hinzufügen.')
+        setShowCapture(true)
       } else {
-        setInfo(`${res.count} Produkte gefunden (${res.source}, Methode: ${res.strategy}).`)
+        setInfo(`${res.count} Produkte gefunden (${res.source}).`)
       }
       setProducts((prev) => mergeProducts(prev, res.products || []))
       setTab('discover')
     } catch (err) {
-      setError(err.message + ' — Du kannst Produkte manuell hinzufügen.')
+      setError(err.message + ' — Nutze das Lesezeichen oder füge Produkte manuell hinzu.')
+      setShowCapture(true)
     } finally {
       setLoading(false)
     }
@@ -228,6 +264,37 @@ export default function App() {
                 {loading ? 'Lese aus…' : 'Outfits finden'}
               </button>
             </form>
+
+            <div className="capture">
+              <button className="capture-toggle" onClick={() => setShowCapture((s) => !s)}>
+                <span>🤍 Produkte zuverlässig aus jedem Shop übernehmen</span>
+                <span>{showCapture ? '▴' : '▾'}</span>
+              </button>
+              {showCapture && (
+                <div className="capture-body">
+                  <p>
+                    Große Shops blockieren automatisches Auslesen. Mit dem Lesezeichen
+                    klappt es trotzdem – direkt von der Seite, die du gerade ansiehst:
+                  </p>
+                  <ol>
+                    <li>
+                      Zieh diesen Button in deine Lesezeichen-Leiste (am PC) –
+                      oder Rechtsklick → Lesezeichen hinzufügen:
+                      <br />
+                      <a className="bookmarklet" href={bookmarklet}
+                         onClick={(e) => e.preventDefault()}>🤍 In Stylist</a>
+                    </li>
+                    <li>Öffne im Shop ein Produkt, das dir gefällt.</li>
+                    <li>Klick auf das Lesezeichen <strong>🤍 In Stylist</strong> – das
+                        Produkt landet automatisch hier (gemerkt) und wird bewertet.</li>
+                  </ol>
+                  <p className="hint">
+                    Tipp am Handy: Geht auch, ist aber fummeliger. Dort ist oft der
+                    <strong> manuelle Modus</strong> einfacher (Button unten).
+                  </p>
+                </div>
+              )}
+            </div>
 
             <div className="toolbar">
               <button className="btn ghost" onClick={() => setShowManual((s) => !s)}>

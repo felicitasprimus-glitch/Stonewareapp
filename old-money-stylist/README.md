@@ -47,36 +47,56 @@ old-money-stylist/
 └─ ../render.yaml      Blueprint für Hosting auf Render
 ```
 
-Die Web-Oberfläche speichert Favoriten direkt im **Browser (localStorage)** –
-deshalb braucht die gehostete Version keine Datenbank und nichts geht verloren,
-wenn der Server neu startet.
-
-Frontend (Port **5173**) spricht über einen Proxy mit dem Backend (Port **8000**).
+Die Web-Oberfläche läuft **komplett im Browser**: Stil-Bewertung, Outfit-Erstellung
+und Scraping (über einen CORS-Proxy) sind als JavaScript in `frontend/src/lib/`
+nachgebaut. Favoriten liegen im **Browser (localStorage)**. Dadurch braucht die
+App **keinen Server** und keine Datenbank. Das Python-Backend ist optional für
+eine leistungsfähigere Server-Variante.
 
 ---
 
-## 🌐 Als echten Web-Link online stellen (empfohlen, ohne Installation)
+## 🌐 Kostenlos online stellen über GitHub Pages (empfohlen – ohne Server, ohne Kreditkarte)
 
-So bekommst du eine **öffentliche URL**, die du im Browser oder am Handy öffnest –
-ganz ohne etwas auf deinem Computer zu installieren. Das Repo enthält bereits
-alles dafür (`Dockerfile` + `render.yaml`); Frontend und Backend laufen als **ein**
-Dienst unter **einer** URL.
+Die App gibt es auch als **eine einzige Datei** unter `stylist/index.html`, die
+**komplett im Browser** läuft (Bewertung, Outfit-Erstellung, Favoriten, PDF).
+Damit brauchst du **keinen Server** und kannst sie gratis auf GitHub Pages hosten.
 
-Mit **Render.com** (kostenloses Kontingent):
+So aktivierst du deinen Link:
 
-1. Konto auf <https://render.com> erstellen (mit GitHub anmelden ist am einfachsten).
-2. Oben auf **New** → **Blueprint** klicken.
-3. Das Repository **`Stonewareapp`** auswählen. Render erkennt die Datei
-   `render.yaml` automatisch und schlägt den Dienst *„old-money-outfit-stylist“* vor.
-4. Auf **Apply** / **Create** klicken und warten, bis der Build fertig ist
-   (beim ersten Mal einige Minuten).
-5. Fertig – Render zeigt dir eine Adresse wie
-   `https://old-money-outfit-stylist.onrender.com`. Das ist dein Link. 🎉
+1. Auf GitHub im Repo **`Stonewareapp`** → **Settings** → **Pages**.
+2. Unter *„Build and deployment“* → **Deploy from a branch** wählen,
+   Branch **`main`**, Ordner **`/ (root)`**, **Save**.
+3. Nach ein paar Minuten ist die App erreichbar unter:
+   **`https://felicitasprimus-glitch.github.io/Stonewareapp/stylist/`** 🎉
 
-> Hinweis: Beim kostenlosen Render-Plan „schläft“ der Dienst nach längerer
-> Inaktivität ein; der erste Aufruf danach dauert dann ~30 Sekunden.
-> Deine Favoriten werden im Browser gespeichert und bleiben trotzdem erhalten.
-> Alternativen mit demselben `Dockerfile`: **Railway** oder **Fly.io**.
+> Voraussetzung: Der Code muss in `main` liegen (Pull Request mergen).
+> Favoriten werden im Browser gespeichert (localStorage) und bleiben erhalten.
+
+**Noch einfacher:** Du kannst die Datei `stylist/index.html` auch direkt aus dem
+Repo herunterladen und per Doppelklick im Browser öffnen – funktioniert auch
+offline (nur das automatische Auslesen von Shops braucht Internet).
+
+> Hinweis zum Auslesen: Im reinen Browser-Modus werden Shop-Seiten über einen
+> öffentlichen CORS-Proxy geladen. Das klappt bei vielen Shops, aber nicht bei
+> allen. Wenn ein Shop blockiert, nutze einfach den **manuellen Modus**
+> (Produkt per Hand eintragen) – Bewertung & Outfits funktionieren voll.
+
+### Datei neu bauen (nach Änderungen)
+
+```bash
+cd old-money-stylist/frontend
+npm install && npm run build
+cp dist/index.html ../../stylist/index.html
+```
+
+---
+
+## 🖥️ Alternative: Voll-Server-Version (mit Backend)
+
+Für stärkeres Scraping gibt es zusätzlich eine Server-Variante (FastAPI +
+Playwright). Sie liegt im Repo als `Dockerfile` und `../render.yaml` und lässt
+sich z.B. auf Render, Railway oder Fly.io betreiben. Für den normalen Gebrauch
+ist die kostenlose GitHub-Pages-Variante oben aber völlig ausreichend.
 
 ---
 

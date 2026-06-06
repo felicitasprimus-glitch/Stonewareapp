@@ -1,16 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { viteSingleFile } from 'vite-plugin-singlefile'
 
-// Während der Entwicklung leiten wir /api an das FastAPI-Backend (Port 8000) weiter.
+// Baut die komplette App in EINE einzelne, eigenständige index.html.
+// Diese läuft ohne Server – einfach öffnen oder kostenlos auf GitHub Pages legen.
 export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-    },
-  },
+  base: './',
+  plugins: [react(), viteSingleFile()],
+  server: { port: 5173 },
 })
